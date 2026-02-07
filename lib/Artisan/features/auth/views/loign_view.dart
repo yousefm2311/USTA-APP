@@ -73,6 +73,7 @@ class _LoginViewState extends State<LoginView> {
                         child: TextPartition(
                           title: AppStrings.login.tr,
                           subtitle: AppStrings.bodyLogin.tr,
+                          artisnaText: AppStrings.artisan.tr,
                         ),
                       ),
                       SizedBox(height: size.height * 0.02),

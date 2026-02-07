@@ -6,6 +6,7 @@ class AppTranslations extends Translations {
   Map<String, Map<String, String>> get keys => {
     'ar_EG': {
       AppStrings.appName: 'أستا',
+      AppStrings.artisan: '(حرفي)',
       AppStrings.appSplash: 'تطبيق للخدمات الحرفية',
       AppStrings.ok: 'حسناً',
       AppStrings.cancel: 'إلغاء',
@@ -301,6 +302,8 @@ class AppTranslations extends Translations {
       AppStrings.reviews : 'التقييمات'
     }, 
     'en_US': {
+
+      AppStrings.artisan: '(Artisan)',
       AppStrings.appearance: 'Appearance',
       AppStrings.passwordUpdated: 'Password updated successfully',
       AppStrings.couldNotCompleteRequest: 'Could not complete the request. Please try again.',

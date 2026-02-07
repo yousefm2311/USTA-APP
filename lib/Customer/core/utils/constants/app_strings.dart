@@ -8,6 +8,8 @@ class AppStrings {
   static const String appName = "app_name";
   static const String appSplash = "app_splash";
 
+
+  static const String user = "User";
   // Common
   static const String ok = "ok";
   static const String cancel = "cancel";

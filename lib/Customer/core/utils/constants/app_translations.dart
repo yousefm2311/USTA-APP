@@ -9,6 +9,9 @@ class AppTranslations extends Translations {
       AppStrings.appName: 'أستا',
       AppStrings.appSplash: 'تطبيق للخدمات الحرفية',
 
+
+
+      AppStrings.user: '(مستخدم)',
       // Common
       AppStrings.ok: 'حسناً',
       AppStrings.cancel: 'إلغاء',
@@ -943,6 +946,9 @@ class AppTranslations extends Translations {
       AppStrings.resendCode: 'Didn’t get the code?',
       AppStrings.resend: 'Resend',
 
+
+
+      AppStrings.user: '(User)',
       // Generic success
       AppStrings.success: 'Done',
       AppStrings.successbody: 'The action completed successfully.',

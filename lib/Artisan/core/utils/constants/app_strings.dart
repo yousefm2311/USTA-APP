@@ -21,6 +21,9 @@ class AppStrings {
   static const String continue_ = "continue";
   static const kOnboardingDoneKey = 'onboarding_done';
 
+
+  static const artisan = 'Artisan';
+
   static const String login = "login";
   static const String loginSuccess = "Logged in successfully";
   static const String createAccountSuccess = 'Account created successfully';

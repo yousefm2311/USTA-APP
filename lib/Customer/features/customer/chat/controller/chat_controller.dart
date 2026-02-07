@@ -18,14 +18,20 @@ import 'package:path_provider/path_provider.dart';
 
 class ChatController extends GetxController {
   final CustomerRepository _repo = Get.find<CustomerRepository>();
-  final ChatRealtimeService _rtService = Get.find<ChatRealtimeService>(tag: 'customer');
-  final AuthController? _auth = Get.isRegistered<AuthController>(tag: 'customer')
+  final ChatRealtimeService _rtService = Get.find<ChatRealtimeService>(
+    tag: 'customer',
+  );
+  final AuthController? _auth =
+      Get.isRegistered<AuthController>(tag: 'customer')
       ? Get.find<AuthController>(tag: 'customer')
       : null;
   final ApiClient _apiClient = Get.find<ApiClient>(tag: 'customer');
-  late final MediaUploadService _uploadService;
+  MediaUploadService? _uploadService;
   final TokenStorage _tokenStorage = Get.find<TokenStorage>(tag: 'customer');
-  final RealtimeController _rtController = Get.find<RealtimeController>(tag: 'customer');
+  final RealtimeController _rtController = Get.find<RealtimeController>(
+    tag: 'customer',
+  );
+  bool _didInit = false;
 
   final RxList<Map<String, dynamic>> chats = <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> messages = <Map<String, dynamic>>[].obs;
@@ -50,10 +56,19 @@ class ChatController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _uploadService = MediaUploadService(dio: _apiClient.dio);
+    if (_didInit) return;
+    _didInit = true;
+    _uploadService ??= MediaUploadService(dio: _apiClient.dio);
     _bootstrapUserId();
     fetchChats();
-    _rtService.start();
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    if (!_rtService.isStarted) {
+      _rtService.start();
+    }
   }
 
   void _bootstrapUserId() {
@@ -242,11 +257,11 @@ class ChatController extends GetxController {
     final peerName = isAdminLast
         ? adminName
         : type == 'direct'
-            ? (artisan['name'] ?? m['artisanName'] ?? m['name'])
-            : (m['artisanName'] ??
-                artisan['name'] ??
-                m['customerName'] ??
-                customer['name']);
+        ? (artisan['name'] ?? m['artisanName'] ?? m['name'])
+        : (m['artisanName'] ??
+              artisan['name'] ??
+              m['customerName'] ??
+              customer['name']);
     return {
       ...m,
       'type': type,
@@ -351,9 +366,7 @@ class ChatController extends GetxController {
       } else {
         _applyLocalEdit(messageId, newText);
       }
-    } catch (_) {
-
-    }
+    } catch (_) {}
   }
 
   Future<void> deleteDirectMessage(String messageId) async {
@@ -367,18 +380,19 @@ class ChatController extends GetxController {
       );
       messages.refresh();
       fetchChats();
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   Future<void> deleteDirectConversation(String otherId) async {
     if (otherId.isEmpty) return;
     try {
       await _repo.api.deleteDirectConversation(otherId);
-      chats.removeWhere((c) =>
-          (c['type']?.toString() == 'direct') &&
-          (c['artisanId']?.toString() == otherId ||
-              c['otherId']?.toString() == otherId));
+      chats.removeWhere(
+        (c) =>
+            (c['type']?.toString() == 'direct') &&
+            (c['artisanId']?.toString() == otherId ||
+                c['otherId']?.toString() == otherId),
+      );
       if (_activeArtisanId == otherId) {
         clearActive();
       }
@@ -386,8 +400,7 @@ class ChatController extends GetxController {
         (m) => (m['artisanId']?.toString() == otherId) && _isDirectMessage(m),
       );
       messages.refresh();
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   void clearActive() {
@@ -409,7 +422,8 @@ class ChatController extends GetxController {
   void onSocketMessage(Map<String, dynamic> data) {
     final msg = _normalizeMessage(data);
     final requestId = msg['requestId']?.toString() ?? '';
-    final isActive = _activeRequestId != null &&
+    final isActive =
+        _activeRequestId != null &&
         requestId.isNotEmpty &&
         _activeRequestId == requestId;
     _updateChatsFromMessage(msg, direct: false);
@@ -432,7 +446,8 @@ class ChatController extends GetxController {
         msg['senderId']?.toString() ??
         '';
     final mine = _isMine(msg);
-    final isActive = _activeArtisanId != null &&
+    final isActive =
+        _activeArtisanId != null &&
         _activeArtisanId!.isNotEmpty &&
         artisanId.isNotEmpty &&
         _activeArtisanId == artisanId;
@@ -617,15 +632,17 @@ class ChatController extends GetxController {
 
   void _mergeServerMessage(String localId, Map<String, dynamic> serverMsg) {
     final normalized = _normalizeMessage(serverMsg);
-    final hasAttachment = (normalized['attachments'] is List &&
+    final hasAttachment =
+        (normalized['attachments'] is List &&
             (normalized['attachments'] as List).isNotEmpty) ||
-        ((normalized['audio'] ?? normalized['video'] ?? normalized['image'] ?? '')
-                .toString()
-                .isNotEmpty);
+        ((normalized['audio'] ??
+                normalized['video'] ??
+                normalized['image'] ??
+                '')
+            .toString()
+            .isNotEmpty);
     if (hasAttachment) {
-      messages.removeWhere(
-        (m) => (m['localId'] ?? '').toString() == localId,
-      );
+      messages.removeWhere((m) => (m['localId'] ?? '').toString() == localId);
       messages.add({...normalized, 'localId': localId, 'state': 'sent'});
       messages.refresh();
       return;
@@ -642,17 +659,22 @@ class ChatController extends GetxController {
     messages.refresh();
     _updateChatsFromMessage(
       normalized,
-      direct: normalized['direct'] == true ||
+      direct:
+          normalized['direct'] == true ||
           (normalized['requestId'] == null ||
               normalized['requestId'].toString().isEmpty),
     );
   }
 
-  void _updateChatsFromMessage(Map<String, dynamic> msg,
-      {required bool direct}) {
+  void _updateChatsFromMessage(
+    Map<String, dynamic> msg, {
+    required bool direct,
+  }) {
     final text = (msg['text'] ?? msg['message'] ?? '').toString();
     final createdAt =
-        (msg['createdAt'] ?? msg['updatedAt'] ?? DateTime.now().toIso8601String())
+        (msg['createdAt'] ??
+                msg['updatedAt'] ??
+                DateTime.now().toIso8601String())
             .toString();
     final mine = _isMine(msg);
     final requestId = msg['requestId']?.toString() ?? '';
@@ -663,11 +685,11 @@ class ChatController extends GetxController {
 
     final isActive = direct
         ? (_activeArtisanId != null &&
-            _activeArtisanId!.isNotEmpty &&
-            _activeArtisanId == artisanId)
+              _activeArtisanId!.isNotEmpty &&
+              _activeArtisanId == artisanId)
         : (_activeRequestId != null &&
-            _activeRequestId!.isNotEmpty &&
-            _activeRequestId == requestId);
+              _activeRequestId!.isNotEmpty &&
+              _activeRequestId == requestId);
 
     int idx = -1;
     if (direct) {
@@ -745,18 +767,17 @@ class ChatController extends GetxController {
 
   String _peerNameForMessage(Map<String, dynamic> msg, {required bool direct}) {
     if (_isAdminMessage(msg)) return _adminDisplayName(msg);
-    final senderName = (msg['senderName'] ??
-            msg['name'] ??
-            msg['peerName'] ??
-            msg['customerName'] ??
-            msg['artisanName'] ??
-            '')
-        .toString();
+    final senderName =
+        (msg['senderName'] ??
+                msg['name'] ??
+                msg['peerName'] ??
+                msg['customerName'] ??
+                msg['artisanName'] ??
+                '')
+            .toString();
     if (senderName.isNotEmpty) return senderName;
     if (direct) {
-      return (msg['artisanId'] ?? '').toString().isNotEmpty
-          ? 'Chat'
-          : 'Chat';
+      return (msg['artisanId'] ?? '').toString().isNotEmpty ? 'Chat' : 'Chat';
     }
     return 'Chat';
   }
@@ -790,7 +811,11 @@ class ChatController extends GetxController {
       }
     }
     final name =
-        (msg['senderName'] ?? msg['name'] ?? msg['peerName'] ?? msg['title'] ?? '')
+        (msg['senderName'] ??
+                msg['name'] ??
+                msg['peerName'] ??
+                msg['title'] ??
+                '')
             .toString()
             .toLowerCase()
             .trim();
@@ -806,8 +831,8 @@ class ChatController extends GetxController {
   }
 
   String _adminDisplayName(Map<String, dynamic> msg) {
-    final raw =
-        (msg['senderName'] ?? msg['name'] ?? msg['title'] ?? '').toString();
+    final raw = (msg['senderName'] ?? msg['name'] ?? msg['title'] ?? '')
+        .toString();
     final lower = raw.toLowerCase();
     if (raw.isNotEmpty &&
         (lower.contains('admin') ||
@@ -843,13 +868,13 @@ class ChatController extends GetxController {
     final typeForApi = isVideo
         ? 'video'
         : isAudio
-            ? 'audio'
-            : 'image';
+        ? 'audio'
+        : 'image';
     final placeholder = isVideo
         ? '[video]'
         : isAudio
-            ? '[audio]'
-            : '[image]';
+        ? '[audio]'
+        : '[image]';
     File file;
     try {
       file = await _resolveMediaFile(dataUri, mime);
@@ -857,7 +882,8 @@ class ChatController extends GetxController {
       _updateMessageState(localId ?? '', state: 'failed');
       return;
     }
-    final pendingId = localId ??
+    final pendingId =
+        localId ??
         addPendingAttachment(
           type: typeForApi,
           placeholderAttachment: 'uploading://${file.path}',
@@ -867,10 +893,14 @@ class ChatController extends GetxController {
         );
     String uploadedUrl = '';
     try {
-      final uploadFile =
-          typeForApi == 'image' ? await ImageCompressor.compress(file) : file;
+      final uploadFile = typeForApi == 'image'
+          ? await ImageCompressor.compress(file)
+          : file;
       final uploadEndpoint = ApiEndpoints.uploadChat;
-      uploadedUrl = await _uploadService.uploadFile(
+      final uploadService = _uploadService ??= MediaUploadService(
+        dio: _apiClient.dio,
+      );
+      uploadedUrl = await uploadService.uploadFile(
         file: uploadFile,
         endpoint: uploadEndpoint,
         onProgress: (p) => _updateUploadProgress(pendingId, p),
@@ -901,10 +931,7 @@ class ChatController extends GetxController {
       (m) => (m['localId'] ?? '').toString() == localId,
     );
     if (idx >= 0) {
-      messages[idx] = {
-        ...messages[idx],
-        'uploadProgress': progress,
-      };
+      messages[idx] = {...messages[idx], 'uploadProgress': progress};
       messages.refresh();
     }
   }
@@ -945,8 +972,7 @@ class ChatController extends GetxController {
     final normalized = _normalizeMessage(msg);
     final id = _idOf(normalized);
     final idx = messages.indexWhere(
-      (m) =>
-          _idOf(m) == id || (m['localId'] ?? '').toString() == id,
+      (m) => _idOf(m) == id || (m['localId'] ?? '').toString() == id,
     );
     final merged = {
       if (idx >= 0) ...messages[idx],
@@ -959,17 +985,13 @@ class ChatController extends GetxController {
       messages.add(merged);
     }
     messages.refresh();
-    _updateChatsFromMessage(
-      merged,
-      direct: _isDirectMessage(merged),
-    );
+    _updateChatsFromMessage(merged, direct: _isDirectMessage(merged));
   }
 
   void _applyLocalEdit(String messageId, String text) {
     final idx = messages.indexWhere(
       (m) =>
-          _idOf(m) == messageId ||
-          (m['localId'] ?? '').toString() == messageId,
+          _idOf(m) == messageId || (m['localId'] ?? '').toString() == messageId,
     );
     if (idx >= 0) {
       messages[idx] = {
@@ -1015,7 +1037,8 @@ class ChatController extends GetxController {
     messages.refresh();
     _updateChatsFromMessage(
       msg,
-      direct: msg['direct'] == true ||
+      direct:
+          msg['direct'] == true ||
           (msg['requestId'] == null || msg['requestId'].toString().isEmpty),
     );
   }
@@ -1041,8 +1064,7 @@ class ChatController extends GetxController {
             }
             _markLocalRead(id);
             _rtService.markRead(id, direct: direct);
-          } catch (_) {
-          }
+          } catch (_) {}
         }
       }
     }
@@ -1089,7 +1111,8 @@ class ChatController extends GetxController {
       final tmpDir = await getTemporaryDirectory();
       final ext = _extFromMime(mime);
       final file = File(
-          '${tmpDir.path}/chat-${DateTime.now().microsecondsSinceEpoch}.$ext');
+        '${tmpDir.path}/chat-${DateTime.now().microsecondsSinceEpoch}.$ext',
+      );
       await file.writeAsBytes(bytes, flush: true);
       return file;
     }
@@ -1152,8 +1175,9 @@ class ChatController extends GetxController {
   }
 
   bool _hasAttachment(Map<String, dynamic> msg) {
-    final attachments =
-        (msg['attachments'] is List) ? (msg['attachments'] as List) : const [];
+    final attachments = (msg['attachments'] is List)
+        ? (msg['attachments'] as List)
+        : const [];
     final mediaField = (msg['audio'] ?? msg['video'] ?? msg['image'] ?? '')
         .toString()
         .trim();
@@ -1168,7 +1192,7 @@ class ChatController extends GetxController {
     final selfId = _ensureCustomerId();
     if ((selfId != null && selfId.isNotEmpty) &&
         (_activeArtisanId != null && _activeArtisanId!.isNotEmpty)) {
-          _rtService.subscribeToDirect(selfId, artisanId: _activeArtisanId);
+      _rtService.subscribeToDirect(selfId, artisanId: _activeArtisanId);
     }
   }
 
@@ -1177,7 +1201,12 @@ class ChatController extends GetxController {
   }
 
   void cancelMessage(String localId) {
-    _updateMessageState(localId, state: 'cancelled', uploadProgress: null, downloadProgress: null);
+    _updateMessageState(
+      localId,
+      state: 'cancelled',
+      uploadProgress: null,
+      downloadProgress: null,
+    );
   }
 
   void retryMessage(String localId) {
@@ -1255,8 +1284,9 @@ class ChatController extends GetxController {
     if (profile != null) {
       _customerId = profile.id;
       final raw = profile.raw ?? {};
-      _customerId ??= (raw['_id'] ?? raw['id'] ?? raw['customerId'] ?? raw['userId'])
-          ?.toString();
+      _customerId ??=
+          (raw['_id'] ?? raw['id'] ?? raw['customerId'] ?? raw['userId'])
+              ?.toString();
     }
     return _customerId;
   }
@@ -1289,8 +1319,13 @@ class ChatController extends GetxController {
       if (artisanId.isEmpty || customerId.isEmpty) return '';
       return 'direct:$customerId:$artisanId';
     }
-    final requestId = (chat['requestId'] ?? chat['request'] ?? chat['_id'] ?? chat['id'] ?? '')
-        .toString();
+    final requestId =
+        (chat['requestId'] ??
+                chat['request'] ??
+                chat['_id'] ??
+                chat['id'] ??
+                '')
+            .toString();
     if (requestId.isEmpty) return '';
     return 'request:$requestId';
   }
@@ -1304,8 +1339,7 @@ class ChatController extends GetxController {
           artisanId.isNotEmpty &&
           _activeArtisanId == artisanId;
     }
-    final requestId =
-        (chat['requestId'] ?? chat['request'] ?? '').toString();
+    final requestId = (chat['requestId'] ?? chat['request'] ?? '').toString();
     return _activeRequestId != null &&
         _activeRequestId!.isNotEmpty &&
         requestId.isNotEmpty &&
@@ -1321,5 +1355,3 @@ class ChatController extends GetxController {
     return 0;
   }
 }
-
-

@@ -9,6 +9,7 @@ import 'package:usta/Customer/core/services/network/api_exception.dart';
 import 'package:usta/Customer/core/services/push/push_notifications_service.dart';
 import 'package:usta/Customer/core/services/token_storage.dart';
 import 'package:usta/Customer/data/models/customer_profile.dart';
+import 'package:usta/Customer/features/customer/customer_navigation_controller.dart';
 import 'package:usta/Customer/features/customer/notifications/controllers/customer_notifications_controller.dart';
 
 import 'package:usta/Customer/core/utils/constants/app_colors.dart';
@@ -407,6 +408,7 @@ class AuthController extends GetxController {
   }
 
   Future<void> logout({bool remote = true}) async {
+    _resetCustomerHomeTab();
     await _storage.clear();
     if (remote) {
       try {
@@ -466,8 +468,15 @@ class AuthController extends GetxController {
     }
 
     if (navigateHome) {
+      _resetCustomerHomeTab();
       Get.offAllNamed(AppRoutes.customerBottomNaviBar);
     }
+  }
+
+  void _resetCustomerHomeTab() {
+    if (!Get.isRegistered<CustomerNavigationController>()) return;
+    final nav = Get.find<CustomerNavigationController>();
+    nav.selectedIndex.value = 0;
   }
 
   bool _payloadHasKey(Map<String, dynamic> payload, String key) {

@@ -43,6 +43,7 @@ class RegisterView extends StatelessWidget {
                         child: TextPartition(
                           title: AppStrings.register.tr,
                           subtitle: AppStrings.register.tr,
+                          artisnaText: AppStrings.artisan.tr,
                         ),
                       ),
                       SizedBox(height: size.height * 0.015),

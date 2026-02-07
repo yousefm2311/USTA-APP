@@ -38,29 +38,24 @@ class _ArtisanHomeViewState extends State<ArtisanHomeView>
   @override
   void initState() {
     super.initState();
-
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 700),
     )..forward();
-
     _headerScale = Tween<double>(
       begin: 0.92,
       end: 1.0,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
-
     _statsOffset = Tween<Offset>(
       begin: const Offset(0, 0.18),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-
     _walletOpacity = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _controller,
         curve: const Interval(0.25, 1.0, curve: Curves.easeIn),
       ),
     );
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshAll();
     });
@@ -73,21 +68,14 @@ class _ArtisanHomeViewState extends State<ArtisanHomeView>
   }
 
   Future<void> _refreshAll() async {
-    // ✅ هات كل البيانات اللي بتظهر في الصفحة
     try {
-      // لو عندك fetchProfile في ProfileController
       await profileController.fetchProfile();
-
-      // لو عندك fetchNewRequests / fetchActiveRequests / fetchHistoryRequests
       await requestsController.fetchNewRequests();
       await requestsController.fetchActiveRequests();
       await requestsController.fetchHistoryRequests();
-
       await earningsController.fetchEarnings();
       await walletController.fetchWallet();
-    } catch (_) {
-      // خليها هادية بدون كراش
-    }
+    } catch (_) {}
   }
 
   @override
@@ -113,17 +101,21 @@ class _ArtisanHomeViewState extends State<ArtisanHomeView>
           profileController.profile,
           items,
         );
-        final missing =
-            ProfileCompletionHelper.missingFields(profileController.profile);
+        final missing = ProfileCompletionHelper.missingFields(
+          profileController.profile,
+        );
         final shouldShow = ProfileCompletionHelper.shouldShowBottomSheet(
           profileController.profile,
           items,
         );
         if (!shouldShow) return const SizedBox.shrink();
 
-        final nextItem =
-            ProfileCompletionHelper.firstMissingItem(items, missing);
-        final onCompleteTap = nextItem?.onTap ??
+        final nextItem = ProfileCompletionHelper.firstMissingItem(
+          items,
+          missing,
+        );
+        final onCompleteTap =
+            nextItem?.onTap ??
             () => pushNamedRoute(AppRoutes.artisanProfileEditView);
 
         return ProfileCompletionBottomSheet(
@@ -145,10 +137,9 @@ class _ArtisanHomeViewState extends State<ArtisanHomeView>
           hideLabel: AppStrings.profileCompletionDismiss.tr,
           expandLabel: AppStrings.profileCompletionViewDetails.tr,
           collapseLabel: AppStrings.profileCompletionHideDetails.tr,
-          percentLabelBuilder: (percent) =>
-              AppStrings.profileCompletionPercentLabel.trParams(
-            {'percent': '$percent'},
-          ),
+          percentLabelBuilder: (percent) => AppStrings
+              .profileCompletionPercentLabel
+              .trParams({'percent': '$percent'}),
         );
       }),
       body: SafeArea(
@@ -156,10 +147,11 @@ class _ArtisanHomeViewState extends State<ArtisanHomeView>
           onRefresh: _refreshAll,
           child: Obx(() {
             final items = ProfileCompletionHelper.items();
-            final completion = ProfileCompletionHelper.effectiveCompletionPercent(
-              profileController.profile,
-              items,
-            );
+            final completion =
+                ProfileCompletionHelper.effectiveCompletionPercent(
+                  profileController.profile,
+                  items,
+                );
             final shouldShow = ProfileCompletionHelper.shouldShowBottomSheet(
               profileController.profile,
               items,
@@ -177,207 +169,214 @@ class _ArtisanHomeViewState extends State<ArtisanHomeView>
                     child: _headerCard(context),
                   ),
 
-                const SizedBox(height: 14),
+                  const SizedBox(height: 14),
 
-                Text(
-                  AppStrings.quickStats.tr,
-                  style: AppTextStyles.body(context).copyWith(
-                    fontWeight: FontWeight.bold,
+                  Text(
+                    AppStrings.quickStats.tr,
+                    style: AppTextStyles.body(
+                      context,
+                    ).copyWith(fontWeight: FontWeight.bold),
                   ),
-                ),
-                const SizedBox(height: 10),
+                  const SizedBox(height: 10),
 
-                SlideTransition(
-                  position: _statsOffset,
-                  child: Obx(() {
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => pushNamedRoute(
-                              AppRoutes.artisanCustomerRequestsView,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            child: _statCard(
-                              title: AppStrings.statNew.tr,
-                              number: requestsController.newRequests.length
-                                  .toString(),
-                              icon: Icons.fiber_new_rounded,
-                              color: Colors.lightBlueAccent,
+                  SlideTransition(
+                    position: _statsOffset,
+                    child: Obx(() {
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => pushNamedRoute(
+                                AppRoutes.artisanCustomerRequestsView,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              child: _statCard(
+                                title: AppStrings.statNew.tr,
+                                number: requestsController.newRequests.length
+                                    .toString(),
+                                icon: Icons.fiber_new_rounded,
+                                color: Colors.lightBlueAccent,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => pushNamedRoute(
-                              AppRoutes.artisanActiveRequestsView,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            child: _statCard(
-                              title: AppStrings.statActive.tr,
-                              number: requestsController.activeRequests.length
-                                  .toString(),
-                              icon: Icons.timelapse_rounded,
-                              color: Colors.orangeAccent,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => pushNamedRoute(
-                              AppRoutes.artisanCompletedRequestsView,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            child: _statCard(
-                              title: AppStrings.statCompleted.tr,
-                              number: requestsController.historyRequests.length
-                                  .toString(),
-                              icon: Icons.check_circle_rounded,
-                              color: Colors.greenAccent,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => pushNamedRoute(
+                                AppRoutes.artisanActiveRequestsView,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              child: _statCard(
+                                title: AppStrings.statActive.tr,
+                                number: requestsController.activeRequests.length
+                                    .toString(),
+                                icon: Icons.timelapse_rounded,
+                                color: Colors.orangeAccent,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    );
-                  }),
-                ),
-
-                const SizedBox(height: 16),
-
-                Text(
-                  AppStrings.walletTitle.tr,
-                  style: AppTextStyles.body(context).copyWith(
-                    fontWeight: FontWeight.bold,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => pushNamedRoute(
+                                AppRoutes.artisanCompletedRequestsView,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              child: _statCard(
+                                title: AppStrings.statCompleted.tr,
+                                number: requestsController
+                                    .historyRequests
+                                    .length
+                                    .toString(),
+                                icon: Icons.check_circle_rounded,
+                                color: Colors.greenAccent,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
                   ),
-                ),
-                const SizedBox(height: 12),
 
-                AnimatedBuilder(
-                  animation: _walletOpacity,
-                  builder: (context, child) {
-                    return Opacity(opacity: _walletOpacity.value, child: child);
-                  },
-                  child: Obx(() {
-                    final loadingWallet = walletController.loading.value;
-                    final loadingEarn = earningsController.loading.value;
+                  const SizedBox(height: 16),
 
-                    final balance = walletController.balance.value;
-                    final monthEarn = earningsController.month.value;
-                    final totalEarn = earningsController.total.value;
+                  Text(
+                    AppStrings.walletTitle.tr,
+                    style: AppTextStyles.body(
+                      context,
+                    ).copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
 
-                    return InkWell(
-                      onTap: () => pushNamedRoute(AppRoutes.artisanWalletView),
-                      borderRadius: BorderRadius.circular(18),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: scheme.surface,
-                          borderRadius: BorderRadius.circular(18),
-                          // border: Border.all(
-                          //   color: scheme.outline.withOpacity(0.12),
-                          // ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 46,
-                              height: 46,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  colors: [
-                                    primaryBlue,
-                                    const Color(0xFF1E40AF),
+                  AnimatedBuilder(
+                    animation: _walletOpacity,
+                    builder: (context, child) {
+                      return Opacity(
+                        opacity: _walletOpacity.value,
+                        child: child,
+                      );
+                    },
+                    child: Obx(() {
+                      final loadingWallet = walletController.loading.value;
+                      final loadingEarn = earningsController.loading.value;
+
+                      final balance = walletController.balance.value;
+                      final monthEarn = earningsController.month.value;
+                      final totalEarn = earningsController.total.value;
+
+                      return InkWell(
+                        onTap: () =>
+                            pushNamedRoute(AppRoutes.artisanWalletView),
+                        borderRadius: BorderRadius.circular(18),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: scheme.surface,
+                            borderRadius: BorderRadius.circular(18),
+                            // border: Border.all(
+                            //   color: scheme.outline.withOpacity(0.12),
+                            // ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 46,
+                                height: 46,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      primaryBlue,
+                                      const Color(0xFF1E40AF),
+                                    ],
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.account_balance_wallet_outlined,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      AppStrings.walletSubtitle.tr,
+                                      style: AppTextStyles.small(
+                                        context,
+                                      ).copyWith(fontSize: 12.5),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    loadingWallet
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : Text(
+                                            "$balance EGP",
+                                            style: AppTextStyles.body(context)
+                                                .copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
+                                          ),
+                                    const SizedBox(height: 10),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: _miniMetric(
+                                            title: 'هذا الشهر',
+                                            value: loadingEarn
+                                                ? null
+                                                : "${monthEarn.toStringAsFixed(2)} EGP",
+                                            icon: Icons.calendar_month_rounded,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: _miniMetric(
+                                            title: 'الإجمالي',
+                                            value: loadingEarn
+                                                ? null
+                                                : "${totalEarn.toStringAsFixed(2)} EGP",
+                                            icon: Icons.all_inclusive_rounded,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ],
                                 ),
                               ),
-                              child: const Icon(
-                                Icons.account_balance_wallet_outlined,
-                                color: Colors.white,
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                size: 18,
+                                color: scheme.onSurface.withOpacity(0.45),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    AppStrings.walletSubtitle.tr,
-                                    style: AppTextStyles.small(context).copyWith(
-                                      fontSize: 12.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  loadingWallet
-                                      ? const SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : Text(
-                                          "$balance EGP",
-                                          style: AppTextStyles.body(context).copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                  const SizedBox(height: 10),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _miniMetric(
-                                          title: 'هذا الشهر',
-                                          value: loadingEarn
-                                              ? null
-                                              : "${monthEarn.toStringAsFixed(2)} EGP",
-                                          icon: Icons.calendar_month_rounded,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: _miniMetric(
-                                          title: 'الإجمالي',
-                                          value: loadingEarn
-                                              ? null
-                                              : "${totalEarn.toStringAsFixed(2)} EGP",
-                                          icon: Icons.all_inclusive_rounded,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Icon(
-                              Icons.arrow_forward_ios,
-                              size: 18,
-                              color: scheme.onSurface.withOpacity(0.45),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  }),
-                ),
-
-                const SizedBox(height: 16),
-
-                Text(
-                  AppStrings.quickActions.tr,
-                  style: AppTextStyles.body(context).copyWith(
-                    fontWeight: FontWeight.bold,
+                      );
+                    }),
                   ),
-                ),
-                const SizedBox(height: 12),
 
-                _quickActionsGrid(context),
+                  const SizedBox(height: 16),
 
-                const SizedBox(height: 22),
+                  Text(
+                    AppStrings.quickActions.tr,
+                    style: AppTextStyles.body(
+                      context,
+                    ).copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+
+                  _quickActionsGrid(context),
+
+                  const SizedBox(height: 22),
                 ],
               ),
             );
@@ -464,17 +463,22 @@ class _ArtisanHomeViewState extends State<ArtisanHomeView>
             ],
           ),
           const SizedBox(height: 14),
-          SizedBox(
-            height: h * 0.058,
+          ConstrainedBox(
+            constraints: BoxConstraints(minHeight: h * 0.056),
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: primaryBlue,
+                minimumSize: const Size.fromHeight(48),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 textStyle: const TextStyle(
-                  inherit: false,
                   fontFamily: "Cairo",
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.bold,
+                  height: 1.2,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(999),
@@ -482,8 +486,12 @@ class _ArtisanHomeViewState extends State<ArtisanHomeView>
                 elevation: 0,
               ),
               onPressed: () => pushNamedRoute(AppRoutes.artisanNewRequestsView),
-              icon: const Icon(Icons.flash_on_rounded),
-              label: Text(AppStrings.newRequestsCta.tr),
+              icon: const Icon(Icons.flash_on_rounded, size: 20),
+              label: Text(
+                AppStrings.newRequestsCta.tr,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
         ],
@@ -528,10 +536,9 @@ class _ArtisanHomeViewState extends State<ArtisanHomeView>
                       )
                     : Text(
                         value,
-                        style: AppTextStyles.body(context).copyWith(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12.5,
-                        ),
+                        style: AppTextStyles.body(
+                          context,
+                        ).copyWith(fontWeight: FontWeight.bold, fontSize: 12.5),
                       ),
               ],
             ),
@@ -687,4 +694,3 @@ class _ArtisanHomeViewState extends State<ArtisanHomeView>
     );
   }
 }
-

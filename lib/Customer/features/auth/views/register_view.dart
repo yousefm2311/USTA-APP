@@ -1,12 +1,11 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:usta/Customer/core/services/helpers/app_mediaquery.dart';
 import 'package:usta/Customer/core/utils/constants/app_colors.dart';
 import 'package:usta/Customer/core/utils/constants/app_strings.dart';
-import 'package:get/get.dart';
-import 'package:usta/Customer/features/auth/controllers/auth_controller.dart';
-
 import 'package:usta/Customer/core/utils/widgets/custom_material_button.dart';
+import 'package:usta/Customer/features/auth/controllers/auth_controller.dart';
 import 'package:usta/Customer/features/auth/views/widgets/register_text_form_field.dart';
 import 'package:usta/Customer/features/auth/views/widgets/terms_conditions.dart';
 import 'package:usta/Customer/features/auth/views/widgets/text_partition.dart';
@@ -43,6 +42,7 @@ class RegisterView extends StatelessWidget {
                         child: TextPartition(
                           title: AppStrings.register.tr,
                           subtitle: AppStrings.register.tr,
+                          userText: AppStrings.user.tr,
                         ),
                       ),
                       SizedBox(height: size.height * 0.015),
