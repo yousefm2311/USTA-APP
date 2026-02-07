@@ -1,0 +1,453 @@
+# Client ↔ Backend Mapping (Customer App)
+
+This file documents how the Flutter client binds to the Node.js Express router. Each endpoint lists the consuming screens/controllers, expected payloads, minimal response contract assumed in the app, and edge-case handling considerations.
+
+## Auth
+- **POST /api/customer/signup**  
+  - Screens: `RegisterView` (Auth).  
+  - Payload: `name` (min 2), `password` (min 6), optional `phone`, optional `email`.  
+  - Response: `{ token, refreshToken?, data|customer|user: { id, name, phone?, email? } }`.  
+  - Handling: form validation + loading; errors via `ApiException` snackbar.  
+  - Edge: missing token → show error; duplicate user → surface backend message.
+- **POST /api/customer/login**  
+  - Screens: `LoginView`.  
+  - Payload: `password`, one of `email` or `phone`.  
+  - Response: `{ token, refreshToken?, data|customer|user: { … } }`.  
+  - Handling: loading, snackbar on error; sets tokens, opens socket.  
+  - Edge: invalid credentials; missing token.
+- **POST /api/customer/logout**  
+  - Screens: Settings/Profile logout action.  
+  - Payload: none.  
+  - Response: `{ message? }`.  
+  - Handling: clears tokens even if call fails.  
+  - Edge: 401 ignored during logout.
+- **POST /api/customer/verify**  
+  - Screens: `ActivationView` (code verification).  
+  - Payload: `code` (len 6), optional `email`/`phone`.  
+  - Response: `{ token?, refreshToken?, data? }`.  
+  - Handling: loading + error messages; may persist tokens if returned.  
+  - Edge: wrong/expired code.
+- **POST /api/customer/forgot-password**  
+  - Screens: Forgot password flow (request code → verify → set new password).  
+  - Payload: Step 1: `email` or `phone`; Step 2: add `code`; Step 3: add `newPassword`.  
+  - Response: `{ message?, data? }`.  
+  - Handling: stepwise loading states; errors surfaced.  
+  - Edge: invalid code; password strength enforcement client-side.
+- **POST /api/customer/refresh-token**  
+  - Internal: `ApiClient` interceptor.  
+  - Payload: `refreshToken`.  
+  - Response: `{ token, refreshToken? }`.  
+  - Handling: one retry per 401; failures trigger logout/snackbar.  
+  - Edge: missing/expired refresh → forces logout.
+
+## Profile & Account
+- **GET /api/customer/me**  
+  - Screens: Profile header, account checks.  
+  - Response: `{ data|customer|user: { id, name, phone?, email?, address?, photo? } }`.  
+  - Handling: loading on controller; caches in memory.  
+  - Edge: 401 -> refresh; empty data -> show placeholder.
+- **GET /api/customer/profile**  
+  - Screens: Profile detail view.  
+  - Response: same as `/me` plus `address`, `photo`.  
+  - Handling: loading + error states.  
+  - Edge: null fields tolerated.
+- **PUT /api/customer/profile**  
+  - Screens: Edit Profile.  
+  - Payload: optional `name`, `phone`, `email`, `address`.  
+  - Response: `{ data|profile: { …updated fields… } }`.  
+  - Handling: send only changed fields; show success/error.  
+  - Edge: validation errors surfaced.
+- **PUT /api/customer/me**  
+  - Screens: lightweight account update.  
+  - Payload: optional `name`, `phone`, `email`, `address`.  
+  - Response: `{ data: { … } }`.  
+  - Handling: same as profile update.  
+  - Edge: partial updates allowed.
+- **POST /api/customer/profile/photo**  
+  - Screens: Upload photo in profile.  
+  - Payload: `photo` (base64 string length ≥ 10).  
+  - Response: `{ data: { photoUrl|photo } }`.  
+  - Handling: shows preview; error snackbar on failure.  
+  - Edge: oversize/invalid base64 -> validation message.
+- **PUT /api/customer/change-password**  
+  - Screens: Change Password form.  
+  - Payload: `currentPassword`, `newPassword` (min 6).  
+  - Response: `{ message? }`.  
+  - Handling: loading button; errors surfaced.  
+  - Edge: wrong current password.
+- **DELETE /api/customer/account**  
+  - Screens: Delete account confirmation sheet.  
+  - Payload: none.  
+  - Response: `{ message? }`.  
+  - Handling: on success clears tokens/logs out.  
+  - Edge: irreversible; confirm in UI.
+
+## Settings & Preferences
+- **PUT /api/customer/notifications**  
+  - Screens: Settings → Notifications toggles.  
+  - Payload: optional `marketing`, `requests`, `chat` booleans.  
+  - Response: `{ data: { … } }`.  
+  - Handling: optimistic toggle with fallback on error.  
+  - Edge: partial updates allowed.
+- **PUT /api/customer/language**  
+  - Screens: Language selector.  
+  - Payload: `language` (`ar`|`en`).  
+  - Response: `{ message? }`.  
+  - Handling: updates locale + persists.  
+  - Edge: invalid code -> show error.
+- **PUT /api/customer/theme**  
+  - Screens: Theme toggle.  
+  - Payload: `theme` (`dark`|`light`).  
+  - Response: `{ message? }`.  
+  - Handling: updates theme controller + local prefs.  
+  - Edge: none.
+- **PUT /api/customer/online**  
+  - Screens: Availability/online status.  
+  - Payload: optional `online` (bool), `unavailableUntil` (ISO).  
+  - Response: `{ data: { online, unavailableUntil } }`.  
+  - Handling: switch with loading; errors revert toggle.  
+  - Edge: invalid date format.
+- **PUT /api/customer/availability**  
+  - Screens: Availability slots editor.  
+  - Payload: `slots` array (day/time ranges).  
+  - Response: `{ data: { slots } }`.  
+  - Handling: sends edited list; shows result.  
+  - Edge: empty list allowed.
+- **GET /api/customer/online**  
+  - Screens: initial status fetch.  
+  - Response: `{ data: { online, unavailableUntil } }`.  
+  - Handling: sets initial toggle state.  
+  - Edge: null values -> default offline.
+
+## Explore & Discovery
+- **GET /api/categories**  
+  - Screens: Home categories grid.  
+  - Response: `{ data|categories: [ { id, name, icon? } ] }`.  
+  - Handling: loading/empty/error states.  
+  - Edge: empty list -> show empty UI.
+- **GET /api/artisans/search**  
+  - Screens: Search view with filters.  
+  - Payload (query): `q`, filter params.  
+  - Response: `{ data|items|rows: [ { id, name, rating?, distance?, avatar?, tags? } ] }`.  
+  - Handling: debounce + loading; empty message.  
+  - Edge: no results.
+- **GET /api/artisans/nearby**  
+  - Screens: Nearby tab (uses location).  
+  - Payload (query): `lat`, `lng`, optional radius.  
+  - Response: list of artisan cards.  
+  - Handling: permission fallback to manual input.  
+  - Edge: missing location -> prompt user.
+- **GET /api/artisans/top-rated**  
+  - Screens: Home top-rated carousel.  
+  - Response: list of artisan cards.  
+  - Handling: loading/error fallback.  
+  - Edge: empty list.
+- **GET /api/artisans/area**  
+  - Screens: Area listing selector.  
+  - Payload (query): `area` or pagination.  
+  - Response: list of artisan cards.  
+  - Handling: loading/error.  
+  - Edge: invalid area -> empty.
+- **GET /api/artisans/:id**  
+  - Screens: Artisan Details.  
+  - Response: `{ id, name, bio?, rating?, services?, gallery?, reviewsSummary? }`.  
+  - Handling: shows details, actions (favorite/review).  
+  - Edge: 404 -> show not found message.
+
+## Service Requests Lifecycle
+- **POST /api/customer/requests**  
+  - Screens: Create Request.  
+  - Payload: optional `serviceType`, `artisanId`, `lat`, `lng`, `address`.  
+  - Response: `{ data|request: { id, status, artisanId?, address, lat, lng, createdAt } }`.  
+  - Handling: loading; success navigates to details.  
+  - Edge: missing required fields -> validation errors.
+- **POST /api/customer/requests/:id/images**  
+  - Screens: Add Images to request.  
+  - Payload: `images` (array of base64 strings).  
+  - Response: `{ data: { images } }`.  
+  - Handling: multi-picker; show progress.  
+  - Edge: oversize images rejected.
+- **GET /api/customer/requests/active**  
+  - Screens: Active Requests list.  
+  - Response: `[ ServiceRequest ]`.  
+  - Handling: loading/error/empty states.  
+  - Edge: none.
+- **GET /api/customer/requests/history**  
+  - Screens: Request history list.  
+  - Response: `[ ServiceRequest ]`.  
+  - Handling: paginated/scroll; empty message.  
+  - Edge: none.
+- **GET /api/customer/requests/:id**  
+  - Screens: Request Details.  
+  - Response: `{ id, artisanId?, status, address?, lat?, lng?, createdAt, images? }`.  
+  - Handling: error -> snackbar + back.  
+  - Edge: missing artisan -> show placeholder.
+- **GET /api/customer/requests/:id/timeline**  
+  - Screens: Timeline section.  
+  - Response: `{ data|items: [ { status, timestamp, note? } ] }`.  
+  - Handling: loading/empty.  
+  - Edge: unordered -> sort by timestamp client-side if needed.
+- **DELETE /api/customer/requests/:id/cancel**  
+  - Screens: Cancel Request action.  
+  - Payload: optional `reason`.  
+  - Response: `{ message?, data? }`.  
+  - Handling: confirm dialog; updates list.  
+  - Edge: already completed -> show error.
+- **POST /api/customer/requests/:id/confirm-completion**  
+  - Screens: Confirm completion action.  
+  - Payload: optional `note`.  
+  - Response: `{ message?, data? }`.  
+  - Handling: success updates status.  
+  - Edge: invalid status -> error.
+
+## Reviews & Ratings
+- **POST /api/customer/reviews/:artisanId**  
+  - Screens: Add review (from details).  
+  - Payload: `rating` (1..5), optional `comment`.  
+  - Response: `{ data: { id, rating, comment? } }`.  
+  - Handling: loading; updates UI.  
+  - Edge: duplicate review -> backend message.
+- **PUT /api/customer/reviews/:id**  
+  - Screens: Edit review.  
+  - Payload: optional `rating`, `comment`.  
+  - Response: `{ data: { id, rating, comment? } }`.  
+  - Handling: loading; update list.  
+  - Edge: invalid id.
+- **DELETE /api/customer/reviews/:id**  
+  - Screens: Delete review action.  
+  - Payload: none.  
+  - Response: `{ message? }`.  
+  - Handling: confirm then remove locally.  
+  - Edge: already deleted.
+- **GET /api/customer/reviews**  
+  - Screens: My Reviews list.  
+  - Response: list of reviews.  
+  - Handling: loading/empty/error.  
+  - Edge: none.
+
+## Favorites & History
+- **POST /api/customer/favorites/:artisanId**  
+  - Screens: Artisan card/detail favorite toggle.  
+  - Payload: none.  
+  - Response: `{ message? }`.  
+  - Handling: optimistic toggle with rollback on error.  
+  - Edge: duplicates ignored client-side.
+- **GET /api/customer/favorites**  
+  - Screens: Favorites list.  
+  - Response: list of artisan cards.  
+  - Handling: loading/empty/error.  
+  - Edge: none.
+- **DELETE /api/customer/favorites/:artisanId**  
+  - Screens: Unfavorite action.  
+  - Payload: none.  
+  - Response: `{ message? }`.  
+  - Handling: optimistic removal.  
+  - Edge: already removed.
+- **GET /api/customer/history**  
+  - Screens: Recently viewed list.  
+  - Response: list of entries.  
+  - Handling: loading/empty/error.  
+  - Edge: none.
+
+## Payments & Wallet
+- **POST /api/payment**  
+  - Screens: Pay from Request details.  
+  - Payload: `requestId`, `amount` (>0).  
+  - Response: `{ data: { id, status, amount } }`.  
+  - Handling: loading; success moves to receipt.  
+  - Edge: invalid amount -> validation error.
+- **GET /api/payment/:id/receipt**  
+  - Screens: Receipt view.  
+  - Response: `{ url?|pdf?|text? }` (rendered accordingly).  
+  - Handling: open URL/PDF/text fallback.  
+  - Edge: missing receipt -> show message.
+- **GET /api/customer/wallet**  
+  - Screens: Wallet home (balance).  
+  - Response: `{ balance, currency?, updatedAt? }`.  
+  - Handling: loading/error; empty -> 0 balance.  
+  - Edge: none.
+- **POST /api/customer/wallet/recharge**  
+  - Screens: Recharge flow.  
+  - Payload: `amount` (>0).  
+  - Response: `{ balance?, transactionId? }`.  
+  - Handling: loading; updates balance.  
+  - Edge: invalid amount.
+- **GET /api/customer/wallet/history**  
+  - Screens: Wallet history list.  
+  - Response: list of transactions `{ id, type, amount, createdAt }`.  
+  - Handling: loading/empty/error.  
+  - Edge: none.
+
+## Notifications + FCM
+- **GET /api/customer/notifications**  
+  - Screens: Notifications list.  
+  - Response: `[ { id, title?, body?, read?, createdAt } ]`.  
+  - Handling: loading/empty/error.  
+  - Edge: duplicates collapsed client-side.
+- **PUT /api/customer/notifications/:id/read**  
+  - Screens: Swipe to mark read.  
+  - Payload: none.  
+  - Response: `{ message? }`.  
+  - Handling: optimistic mark read.  
+  - Edge: already read.
+- **DELETE /api/customer/notifications/:id**  
+  - Screens: Swipe to delete.  
+  - Payload: none.  
+  - Response: `{ message? }`.  
+  - Handling: remove locally.  
+  - Edge: already removed.
+- **POST /api/customer/notifications/fcm-token**  
+  - Screens: App start post-login (FCM register).  
+  - Payload: `token` (string).  
+  - Response: `{ message? }`.  
+  - Handling: idempotent client side; ignore duplicates.  
+  - Edge: invalid token.
+- **GET /api/customer/notifications/fcm-token**  
+  - Screens: Debug/verification fetch.  
+  - Response: list of tokens.  
+  - Handling: none special.  
+  - Edge: empty list.
+- **GET /notifications/customer/:id/tokens**  
+  - Screens: Internal debugging (not user-facing).  
+  - Response: tokens list.  
+  - Handling: none.  
+  - Edge: none.
+
+## Complaints / Support
+- **POST /api/customer/complaints**  
+  - Screens: Create Complaint form.  
+  - Payload: `issue`, optional `artisanId`, `requestId`, `type`.  
+  - Response: `{ data: { id, issue, status } }`.  
+  - Handling: loading; success navigates to details.  
+  - Edge: missing issue -> validation.
+- **GET /api/customer/complaints**  
+  - Screens: Complaints list.  
+  - Response: list of complaints.  
+  - Handling: loading/empty/error.  
+  - Edge: none.
+- **GET /api/customer/complaints/:id**  
+  - Screens: Complaint details.  
+  - Response: `{ id, issue, status, messages? }`.  
+  - Handling: loading; 404 shows error.  
+  - Edge: missing messages -> empty thread.
+- **POST /api/customer/complaints/:id/messages**  
+  - Screens: Complaint chat thread input.  
+  - Payload: `message`.  
+  - Response: `{ data: { id, message, createdAt } }`.  
+  - Handling: optimistic append with rollback on error.  
+  - Edge: empty message blocked.
+
+## Analytics & Dashboard
+- **GET /api/customer/dashboard**  
+  - Screens: Dashboard cards.  
+  - Response: `{ totals?: { requests?, spend?, favorites? } }`.  
+  - Handling: loading/error; missing numbers default to 0.  
+  - Edge: none.
+- **GET /api/customer/stats**  
+  - Screens: Stats view (charts).  
+  - Response: `{ series?: [ { label, value } ] }`.  
+  - Handling: if no chart data, show list fallback.  
+  - Edge: empty series -> empty state.
+
+## Marketing & Extras
+- **GET /api/customer/coupons**  
+  - Screens: Coupons list.  
+  - Response: list of coupons `{ code, discount, expiresAt? }`.  
+  - Handling: loading/empty/error.  
+  - Edge: expired coupons flagged client side if provided.
+- **POST /api/customer/coupons/apply**  
+  - Screens: Apply coupon modal.  
+  - Payload: `code`.  
+  - Response: `{ success, discount?, message? }`.  
+  - Handling: loading; shows success/error.  
+  - Edge: invalid/used code.
+- **POST /api/customer/referral**  
+  - Screens: Referral screen.  
+  - Payload: `code`.  
+  - Response: `{ message?, reward? }`.  
+  - Handling: loading; feedback to user.  
+  - Edge: self-referral rejected.
+- **GET /api/customer/rewards**  
+  - Screens: Rewards page.  
+  - Response: `{ points?, tiers? }`.  
+  - Handling: loading/empty/error.  
+  - Edge: none.
+- **GET /api/customer/recommendations**  
+  - Screens: Recommendations feed.  
+  - Response: list of artisan/service suggestions.  
+  - Handling: loading/empty/error.  
+  - Edge: empty -> show placeholder.
+- **GET /api/customer/live-map**  
+  - Screens: Live map placeholder.  
+  - Response: list/map data; if none, shows stub.  
+  - Handling: error -> message.  
+  - Edge: missing realtime data.
+- **GET /api/customer/ai-feedback**  
+  - Screens: AI feedback screen.  
+  - Payload (query): optional `message` to send.  
+  - Response: `{ message|reply }`.  
+  - Handling: render safely; loading/error states.  
+  - Edge: empty reply -> show fallback text.
+
+## Chat (Customer side)
+- **GET /api/chat**  
+  - Screens: Chat list.  
+  - Response: list of conversations.  
+  - Handling: loading/empty/error.  
+  - Edge: none.
+- **POST /api/chat/:requestId**  
+  - Screens: Open chat for request.  
+  - Payload: none.  
+  - Response: `{ data: { threadId?, messages? } }`.  
+  - Handling: opens socket room.  
+  - Edge: invalid request id.
+- **GET /api/chat/:requestId**  
+  - Screens: Chat messages for request.  
+  - Response: list of messages.  
+  - Handling: loading/scroll; error -> snackbar.  
+  - Edge: empty history.
+- **POST /api/chat/message**  
+  - Screens: Send message.  
+  - Payload: `requestId`, `type`, optional `message`.  
+  - Response: `{ data: { id, message, type, createdAt } }`.  
+  - Handling: optimistic send with rollback on error.  
+  - Edge: unsupported type -> error.
+- **PUT /api/chat/read/:messageId**  
+  - Screens: Mark message read (background).  
+  - Payload: none.  
+  - Response: `{ message? }`.  
+  - Handling: fire-and-forget.  
+  - Edge: missing message id.
+- **GET /api/chat/direct/inbox**  
+  - Screens: Direct inbox (if enabled).  
+  - Response: list of threads.  
+  - Handling: loading/empty/error.  
+  - Edge: optional feature.
+- **GET /api/chat/direct/:otherId**  
+  - Screens: Direct messages.  
+  - Response: list of messages.  
+  - Handling: loading/error.  
+  - Edge: unknown user id.
+- **POST /api/chat/direct/message**  
+  - Screens: Send direct message.  
+  - Payload: `otherId`, `message`.  
+  - Response: `{ data: { id, message } }`.  
+  - Handling: optimistic send.  
+  - Edge: empty message blocked.
+- **PUT /api/chat/direct/read/:messageId**  
+  - Screens: Mark direct message read (background).  
+  - Payload: none.  
+  - Response: `{ message? }`.  
+  - Handling: fire-and-forget.  
+  - Edge: missing id.
+
+---
+
+### Loading/Error/Empty Patterns
+- All controllers wrap calls with `loading` observables and map backend/network errors into `ApiException` via `ApiClient`.
+- Empty lists render placeholders; errors show snackbars/banners per screen.
+- Authenticated endpoints attach `Authorization: Bearer <accessToken>`; 401 triggers a single refresh attempt before logout.
+
+### Unused/Optional Endpoints
+- `/notifications/customer/:id/tokens`, `/chat/direct/*` are present for debugging/optional direct messaging; UI uses them only when enabled in feature flags.
+

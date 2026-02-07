@@ -1,0 +1,317 @@
+// ignore_for_file: constant_identifier_names
+import 'package:get_storage/get_storage.dart';
+
+final box = GetStorage();
+
+class AppStrings {
+  static const String appName = "app_name";
+  static const String appSplash = "app_splash";
+  static const String ok = "ok";
+  static const String cancel = "cancel";
+  static const String confirm = "confirm";
+  static const String loading = "loading";
+  static const String error = "error";
+  static const String info = "info";
+  static const String retry = "retry";
+  static const String noData = "noData";
+  static const String next = "next";
+  static const String getStarted = "getStarted";
+  static const String skip = "skip";
+  static const String back = "back";
+  static const String continue_ = "continue";
+  static const kOnboardingDoneKey = 'onboarding_done';
+
+  static const String login = "login";
+  static const String loginSuccess = "Logged in successfully";
+  static const String createAccountSuccess = 'Account created successfully';
+  static const String verifySuccess = 'Verification successful';
+  static const String verifyCodeSent = 'Verification code sent again';
+  static const String passwordUpdated = 'Password updated successfully';
+  static const String couldNotCompleteRequest =
+      'Could not complete the request now';
+  static const String emailNotFound = 'emailNotFound';
+  static const String passwordIncorrect = 'passwordIncorrect';
+  static const String warning = 'warning';
+  static const String invalidPriceTitle = 'invalidPriceTitle';
+  static const String invalidPriceMessage = 'invalidPriceMessage';
+  static const String requestAcceptedTitle = 'requestAcceptedTitle';
+  static const String requestAcceptedMessage = 'requestAcceptedMessage';
+  static const String requestAcceptFailed = 'requestAcceptFailed';
+  static const String requestRejectedTitle = 'requestRejectedTitle';
+  static const String requestRejectedMessage = 'requestRejectedMessage';
+  static const String requestRejectFailed = 'requestRejectFailed';
+  static const String priceAcceptedTitle = 'priceAcceptedTitle';
+  static const String priceAcceptedMessage = 'priceAcceptedMessage';
+  static const String selectServiceWarningTitle = 'selectServiceWarningTitle';
+  static const String selectServiceWarningMessage =
+      'selectServiceWarningMessage';
+  static const String waitingCustomerConfirmationTitle =
+      'waitingCustomerConfirmationTitle';
+  static const String waitingCustomerConfirmationMessage =
+      'waitingCustomerConfirmationMessage';
+  static const String timelineUpdatedTitle = 'timelineUpdatedTitle';
+  static const String timelineUpdatedMessage = 'timelineUpdatedMessage';
+  static const String walletLoadFailed = 'walletLoadFailed';
+  static const String invalidWithdrawAmount = 'invalidWithdrawAmount';
+  static const String insufficientBalance = 'insufficientBalance';
+  static const String withdrawSuccess = 'withdrawSuccess';
+  static const String withdrawFailed = 'withdrawFailed';
+  static const String locationPermissionRequired = 'locationPermissionRequired';
+  static const String locationPermissionDenied = 'locationPermissionDenied';
+  static const String currentLocationFailed = 'currentLocationFailed';
+  static const String selectLocationFirst = 'selectLocationFirst';
+  static const String locationSaved = 'locationSaved';
+  static const String locationSaveFailed = 'locationSaveFailed';
+  static const String earningsLoadFailed = 'earningsLoadFailed';
+  static const String serviceNameRequired = 'serviceNameRequired';
+  static const String serviceDeleteMissingId = 'serviceDeleteMissingId';
+  static const String servicesLoadFailed = 'servicesLoadFailed';
+  static const String categoriesLoadFailed = 'categoriesLoadFailed';
+  static const String servicesUpdatedMessage = 'servicesUpdatedMessage';
+  static const String servicesUpdateFailed = 'servicesUpdateFailed';
+  static const String pricingSavedMessage = 'pricingSavedMessage';
+  static const String pricingSaveFailed = 'pricingSaveFailed';
+  static const String serviceSavedMessage = 'serviceSavedMessage';
+  static const String serviceSaveFailed = 'serviceSaveFailed';
+  static const String serviceDeletedMessage = 'serviceDeletedMessage';
+  static const String serviceDeleteFailed = 'serviceDeleteFailed';
+  static const String reviewReplySent = 'reviewReplySent';
+  static const String imageSaveSuccess = 'imageSaveSuccess';
+  static const String imageSaveFailed = 'imageSaveFailed';
+  static const String filePickFailed = 'filePickFailed';
+  static const String videoTooLarge = 'videoTooLarge';
+  static const String imageTooLarge = 'imageTooLarge';
+  static const String microphonePermissionRequired =
+      'microphonePermissionRequired';
+  static const String recordingNotAvailable = 'recordingNotAvailable';
+  static const String recordingStartFailed = 'recordingStartFailed';
+  static const String audioTooLarge = 'audioTooLarge';
+  static const String recordingStopFailed = 'recordingStopFailed';
+  static const String audioPlayFailed = 'audioPlayFailed';
+  static const String profileUpdateFailed = 'profileUpdateFailed';
+  static const String complaintMessageSent = 'complaintMessageSent';
+  static const String complaintMessageFailed = 'complaintMessageFailed';
+  static const String portfolioMissingId = 'portfolioMissingId';
+  static const String portfolioEmptyImage = 'portfolioEmptyImage';
+  static const String portfolioImageTooLarge = 'portfolioImageTooLarge';
+  static const String portfolioReadImageFailed = 'portfolioReadImageFailed';
+  static const String portfolioSelectAtLeastOne =
+      'portfolioSelectAtLeastOne';
+  static const String invalidCardNumber = 'invalidCardNumber';
+  static const String cardSavedMock = 'cardSavedMock';
+  static const String unknownCustomer = 'unknownCustomer';
+  static const String unknownService = 'unknownService';
+  static const String newRequestNotification = 'newRequestNotification';
+  static const String chatLoadFailed = 'chatLoadFailed';
+  static const String messagesLoadFailed = 'messagesLoadFailed';
+  static const String inboxLoadFailed = 'inboxLoadFailed';
+  static const String profileUpdated = 'profileUpdated';
+  static const String statusUpdated = 'statusUpdated';
+  static const String locationUpdated = 'locationUpdated';
+  static const String availabilityUpdated = 'availabilityUpdated';
+  static const String complaintsLoadFailed = 'complaintsLoadFailed';
+  static const String complaintDetailsFailed = 'complaintDetailsFailed';
+  static const String complaintSentSuccess = 'complaintSentSuccess';
+  static const String complaintSendFailed = 'complaintSendFailed';
+  static const String requestIdMissing = 'requestIdMissing';
+  static const String sendMessageFailed = 'sendMessageFailed';
+  static const String editMessageFailed = 'editMessageFailed';
+  static const String deleteMessageFailed = 'deleteMessageFailed';
+  static const String clearChatFailed = 'clearChatFailed';
+  static const String sendMediaFailed = 'sendMediaFailed';
+  static const String downloadFailed = 'downloadFailed';
+
+  static const String forgotPaswword = "forgotPaswword";
+  static const String forgotPaswwordText = "forgotPaswwordText";
+  static const String checkemail = "checkemail";
+  static const String setnewPassword = "setnewPassword";
+  static const String setnewPasswordbody = "setnewPasswordbody";
+  static const String checkemailbody = "checkemailbody";
+  static const String activateAccount = "activateAccount";
+  static const String activateAccountBody = "activateAccountBody";
+  static const String activateAccountButton = "activateAccountButton";
+  static const String resendCode = "resendCode";
+  static const String forgotPaswwordbody = "forgotPaswwordbody";
+  static const String forgotPasswordButton = "forgotPasswordButton";
+  static const String forgotPasswordSent = "forgotPasswordSent";
+  static const String forgotPasswordFailed = "forgotPasswordFailed";
+  static const String sendingCode = "sendingCode";
+  static const String bodyLogin = "bodyLogin";
+  static const String register = "register";
+  static const String email = "email";
+  static const String success = "success";
+  static const String successbody = "successbody";
+  static const String invalidCode = "invalidCode";
+  static const String accountNotApproved = "accountNotApproved";
+  static const String passwordResetSuccess = "passwordResetSuccess";
+  static const String passwordsMismatch = "passwordsMismatch";
+  static const String updatingPassword = "updatingPassword";
+  static const String verifyingCode = "verifyingCode";
+  static const String artisanReviewsTitle = "artisanReviewsTitle";
+  static const String ratingSummary = "ratingSummary";
+  static const String ratingAverage = "ratingAverage";
+  static const String ratingCount = "ratingCount";
+  static const String reviewerNamePlaceholder = "reviewerNamePlaceholder";
+  static const String reviewBodyPlaceholder = "reviewBodyPlaceholder";
+  static const String reviewDatePlaceholder = "reviewDatePlaceholder";
+  static const String reviewCountSuffix = "reviewCountSuffix";
+  static const String replyReview = "replyReview";
+  static const String replyHint = "replyHint";
+  static const String reviewsLoadFailed = "reviewsLoadFailed";
+  static const String reviewReplyFailed = "reviewReplyFailed";
+  static const String send = "send";
+
+  static const String password = "password";
+  static const String passwordConfirm = "passwordConfirm";
+  static const String updatePassword = "updatePassword";
+
+  static const String name = "name";
+  static const String profession = "profession";
+
+  static const String phone = "phone";
+
+  static const String trips = "trips";
+  static const String chat = "chat";
+  static const String notifications = "notifications";
+  static const String reviews = "reviews";
+  static const String profile = "profile";
+  static const String settings = "settings";
+
+  static const String home = "home";
+  static const String more = "more";
+  static const String appearance = "appearance";
+
+  static const String wallet = 'wallet';
+  static const String reminder = 'reminder';
+  static const String oilAndMa = 'oilAndMa';
+  static const String aboutApp = 'aboutApp';
+  static const String logout = 'logout';
+  static const String termsandconditions = 'termsandconditions';
+  static const String terms = 'terms';
+  static const String conditions = 'conditions';
+  static const String and = 'and';
+  static const String resend = 'resend';
+  static const String goodmorning = 'goodmorning';
+  static const String status = 'status';
+  static const String stop = 'stop';
+  static const String starttrip = 'starttrip';
+  static const String start = 'start';
+  static const String show = 'show';
+  static const String open = 'open';
+  static const String online = 'online';
+  static const String summaryday = 'summaryday';
+  static const String nearbyrequest = 'nearbyrequest';
+  static const String selectpath = 'selectpath';
+  static const String locationLive5Seconds = 'locationLive5Seconds';
+  static const String privacy = 'privacy';
+  static const String policiesanddata = 'policiesanddata';
+  static const String language = 'language';
+  static const String ar_lang = 'ar_lang';
+  static const String en_lang = 'en_lang';
+  static const String change = 'change';
+  static const String enable = 'enable';
+  static const String theme = 'theme';
+  static const String ligth = 'ligth';
+  static const String pathfrom = 'pathfrom';
+  static const String pathin = 'pathin';
+  static const String capacityvehicle = 'capacityvehicle';
+  static const String edit = 'edit';
+  static const String save = 'save';
+  static const String vehicel = 'vehicel';
+  static const String vehicelname = 'vehicelname';
+  static const String favoritepath = 'favoritepath';
+  static const String tripsummary = 'tripsummary';
+  static const String triprequest = 'triprequest';
+  static const String accept = 'accept';
+  static const String livetrip = 'livetrip';
+  static const String inriderpassenger = 'inriderpassenger';
+  static const String support = 'support';
+  static const String update = 'update';
+  static const String updatevailable = 'updatevailable';
+  static const String updateDetails = 'updateDetails';
+  static const String updatesize = 'updatesize';
+  static const String updatenow = 'updatenow';
+
+  static const String uploaddocuments = 'uploaddocuments';
+  static const String idfront = 'idfront';
+  static const String idback = 'idback';
+  static const String license = 'license';
+  static const String carphoto = 'carphoto';
+  static const String profilephoto = 'profilephoto';
+
+  // Artisan UI extras
+  static const String artisanHomeTitle = 'artisanHomeTitle';
+  static const String quickStats = 'quickStats';
+  static const String statNew = 'statNew';
+  static const String statActive = 'statActive';
+  static const String statCompleted = 'statCompleted';
+  static const String walletTitle = 'walletTitle';
+  static const String walletSubtitle = 'walletSubtitle';
+  static const String walletDetails = 'walletDetails';
+  static const String quickActions = 'quickActions';
+  static const String goToNewRequests = 'goToNewRequests';
+  static const String updateProfile = 'updateProfile';
+  static const String city = 'city';
+  static const String address = 'address';
+  static const String security = 'security';
+  static const String changePassword = 'changePassword';
+  static const String offline = 'offline';
+  static const String homeHeadline = 'homeHeadline';
+  static const String quickActionsServices = 'quickActionsServices';
+  static const String quickActionsHistory = 'quickActionsHistory';
+  static const String quickActionsWallet = 'quickActionsWallet';
+  static const String quickActionsPortfolio = 'quickActionsPortfolio';
+  static const String quickActionsNotifications = 'quickActionsNotifications';
+  static const String quickActionsProfile = 'quickActionsProfile';
+  static const String newRequestsCta = 'newRequestsCta';
+  static const String profileTitle = 'profileTitle';
+  static const String profileCompletionTitle = 'profileCompletionTitle';
+  static const String profileCompletionSubtitle = 'profileCompletionSubtitle';
+  static const String profileCompletionPercentLabel =
+      'profileCompletionPercentLabel';
+  static const String profileCompletionCta = 'profileCompletionCta';
+  static const String profileCompletionDismiss = 'profileCompletionDismiss';
+  static const String profileCompletionViewDetails =
+      'profileCompletionViewDetails';
+  static const String profileCompletionHideDetails =
+      'profileCompletionHideDetails';
+  static const String saveProfile = 'saveProfile';
+  static const String passwordAdvice = 'passwordAdvice';
+  static const String withdraw = 'withdraw';
+  static const String description = 'description';
+  static const String requestsCompleted = 'requestsCompleted';
+  static const String rating = 'rating';
+  static const String portfolio = 'portfolio';
+  static const String about = 'about';
+  static const String servicesLabel = 'servicesLabel';
+  static const String pricing = 'pricing';
+  static const String availability = 'availability';
+  static const String help = 'help';
+  static const String lightMode = 'lightMode';
+  static const String darkMode = 'darkMode';
+  static const String logoutConfirm = 'logoutConfirm';
+  static const String unavailableUntil = 'unavailableUntil';
+  static const String add = 'add';
+  static const String setLocation = 'setLocation';
+  // Notifications
+  static const String notificationsLoadFailed = 'notificationsLoadFailed';
+  static const String notificationMarkReadFailed = 'notificationMarkReadFailed';
+  static const String notificationSettingsUpdated =
+      'notificationSettingsUpdated';
+  static const String notificationSettingsFailed = 'notificationSettingsFailed';
+  static const String notificationSettingsLoadFailed =
+      'notificationSettingsLoadFailed';
+  static const String notifMarketing = 'notifMarketing';
+  static const String notifRequests = 'notifRequests';
+  static const String notifChat = 'notifChat';
+
+  // Portfolio
+  static const String portfolioLoadFailed = 'portfolioLoadFailed';
+  static const String portfolioUploadSuccess = 'portfolioUploadSuccess';
+  static const String portfolioUploadFailed = 'portfolioUploadFailed';
+  static const String portfolioUploadPartial = 'portfolioUploadPartial';
+  static const String portfolioDeleteSuccess = 'portfolioDeleteSuccess';
+  static const String portfolioDeleteFailed = 'portfolioDeleteFailed';
+  static const String portfolioLimitReached = 'portfolioLimitReached';
+  static const String services = 'services';
+}
