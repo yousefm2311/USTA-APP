@@ -16,7 +16,6 @@ import 'package:usta/Customer/core/utils/routes/routes.dart';
 import 'package:usta/Customer/features/auth/controllers/auth_controller.dart';
 import 'package:usta/Customer/core/utils/app_snackbar.dart';
 import 'package:usta/app/app_mode_controller.dart';
-import 'package:usta/app/choose_user_type_view.dart';
 
 class ApiClient extends GetxService {
   late final Dio _dio;
@@ -88,8 +87,7 @@ class ApiClient extends GetxService {
             try {
               final cloned = await _retry(error.requestOptions);
               return handler.resolve(cloned);
-            } catch (_) {
-            }
+            } catch (_) {}
           }
         }
         return handler.next(error);
@@ -119,10 +117,7 @@ class ApiClient extends GetxService {
       receiveTimeout: requestOptions.receiveTimeout,
       sendTimeout: requestOptions.sendTimeout,
       validateStatus: requestOptions.validateStatus,
-      extra: {
-        ...requestOptions.extra,
-        _retryFlag: true,
-      },
+      extra: {...requestOptions.extra, _retryFlag: true},
     );
 
     final token = _storage.accessToken;
@@ -143,9 +138,7 @@ class ApiClient extends GetxService {
     final refreshToken = _storage.refreshToken;
     if (refreshToken == null || refreshToken.isEmpty) {
       await _storage.clear();
-      _handleSessionExpired(
-        'انتهت صلاحية الجلسة، رجاء سجّل الدخول من جديد'.tr,
-      );
+      _handleSessionExpired('انتهت صلاحية الجلسة، رجاء سجّل الدخول من جديد'.tr);
       return false;
     }
 
@@ -213,10 +206,12 @@ class ApiClient extends GetxService {
 
   String? _extractAccessToken(dynamic data) {
     if (data is Map<String, dynamic>) {
-      final direct = data['token'] ?? data['accessToken'] ?? data['access_token'];
+      final direct =
+          data['token'] ?? data['accessToken'] ?? data['access_token'];
       if (direct is String && direct.isNotEmpty) return direct;
       if (data['data'] is Map<String, dynamic>) {
-        final nested = (data['data'] as Map<String, dynamic>)['token'] ??
+        final nested =
+            (data['data'] as Map<String, dynamic>)['token'] ??
             (data['data'] as Map<String, dynamic>)['accessToken'] ??
             (data['data'] as Map<String, dynamic>)['access_token'];
         if (nested is String && nested.isNotEmpty) return nested;
@@ -231,7 +226,8 @@ class ApiClient extends GetxService {
           data['refreshToken'] ?? data['refresh_token'] ?? data['refresh'];
       if (direct is String && direct.isNotEmpty) return direct;
       if (data['data'] is Map<String, dynamic>) {
-        final nested = (data['data'] as Map<String, dynamic>)['refreshToken'] ??
+        final nested =
+            (data['data'] as Map<String, dynamic>)['refreshToken'] ??
             (data['data'] as Map<String, dynamic>)['refresh_token'] ??
             (data['data'] as Map<String, dynamic>)['refresh'];
         if (nested is String && nested.isNotEmpty) return nested;
@@ -460,8 +456,8 @@ class ApiClient extends GetxService {
       final error = ApiException(
         message: response.data is Map<String, dynamic>
             ? (response.data['message'] ??
-                response.data['error'] ??
-                'Your account is blocked by admin')
+                  response.data['error'] ??
+                  'Your account is blocked by admin')
             : 'Your account is blocked by admin',
         statusCode: status,
         details: response.data,
@@ -472,8 +468,8 @@ class ApiClient extends GetxService {
     final error = ApiException(
       message: response.data is Map<String, dynamic>
           ? (response.data['message'] ??
-              response.data['error'] ??
-              'Request failed')
+                response.data['error'] ??
+                'Request failed')
           : 'Request failed',
       statusCode: status,
       details: response.data,
@@ -506,12 +502,26 @@ class ApiClient extends GetxService {
       } finally {
         _handlingSession = false;
       }
-      });
-    }
+    });
+  }
+
+  bool _isCustomerModeActive() {
+    if (!Get.isRegistered<AppModeController>()) return true;
+    final controller = AppModeController.to;
+    if (controller.isBootstrapping.value) return false;
+    return controller.mode.value == AppUserType.customer;
+  }
 
   bool _isNavigatorReady() {
     final navigatorKey = Get.key;
     return navigatorKey != null && navigatorKey.currentState != null;
+  }
+
+  bool _hasAnySessionToken() {
+    final access = _storage.accessToken;
+    if (access != null && access.isNotEmpty) return true;
+    final refresh = _storage.refreshToken;
+    return refresh != null && refresh.isNotEmpty;
   }
 
   void _navigateToLoginSafely() {
@@ -519,16 +529,10 @@ class ApiClient extends GetxService {
   }
 
   void _resetToChooserSafely() {
-    if (Get.isRegistered<AppModeController>()) {
-      AppModeController.to.resetToChooser().then((switched) {
-        if (!switched) {
-          if (Get.currentRoute != AppRoutes.login) {
-            Get.offAllNamed(AppRoutes.login);
-          }
-        } else {
-          Get.offAll(() => const ChooseUserTypeView());
-        }
-      });
+    if (!_isCustomerModeActive()) return;
+    if (Get.isRegistered<AppModeController>() &&
+        AppModeController.to.switcherAttached) {
+      AppModeController.to.resetToChooser();
       return;
     }
     if (_isNavigatorReady()) {
@@ -547,6 +551,14 @@ class ApiClient extends GetxService {
       const maxAttempts = 10;
       for (var attempt = 0; attempt < maxAttempts; attempt++) {
         await Future.delayed(const Duration(milliseconds: 100));
+        // Stop delayed navigation if app switched away from customer mode.
+        if (!_isCustomerModeActive()) {
+          break;
+        }
+        // Stop delayed navigation when session is already gone.
+        if (!_hasAnySessionToken()) {
+          break;
+        }
         if (!_isNavigatorReady()) continue;
         if (Get.currentRoute != AppRoutes.login) {
           Get.offAllNamed(AppRoutes.login);
@@ -579,26 +591,28 @@ class ApiClient extends GetxService {
     final status = error.statusCode;
     if (status != 401 && status != 403) return false;
     if (request != null && _isPublicAuthEndpoint(request)) return false;
+    if (!_isCustomerModeActive()) return false;
+    if (!_hasAnySessionToken()) return false;
     if (_handlingAuthFailure) return true;
     _handlingAuthFailure = true;
 
     final message = error.message.isNotEmpty
         ? error.message
         : (status == 403
-            ? 'تم حظر حسابك بواسطة الإدارة'.tr
-            : 'انتهت صلاحية الجلسة، رجاء سجّل الدخول من جديد'.tr);
+              ? 'تم حظر حسابك بواسطة الإدارة'.tr
+              : 'انتهت صلاحية الجلسة، رجاء سجّل الدخول من جديد'.tr);
 
-      Future.microtask(() async {
-        try {
-          if (Get.isRegistered<AuthController>(tag: 'customer')) {
-            await Get.find<AuthController>(tag: 'customer').logout(remote: false);
-          } else {
-            await _storage.clear();
-            _navigateToLoginSafely();
-          }
-          AppSnackBar.show(
-            'تنبيه'.tr,
-            message,
+    Future.microtask(() async {
+      try {
+        if (Get.isRegistered<AuthController>(tag: 'customer')) {
+          await Get.find<AuthController>(tag: 'customer').logout(remote: false);
+        } else {
+          await _storage.clear();
+          _navigateToLoginSafely();
+        }
+        AppSnackBar.show(
+          'تنبيه'.tr,
+          message,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.black87,
           colorText: Colors.white,
@@ -634,7 +648,3 @@ class ApiClient extends GetxService {
     return path.contains('/customer/refresh-token');
   }
 }
-
-
-
-

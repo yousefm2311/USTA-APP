@@ -2,35 +2,50 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:usta/Artisan/core/utils/constants/app_strings.dart';
 import 'package:usta/Artisan/core/utils/widgets/text_button.dart';
+import 'package:usta/Artisan/features/auth/views/legal/privacy_policy_view.dart';
+import 'package:usta/Artisan/features/auth/views/legal/terms_conditions_view.dart';
 
 class TermsConditions extends StatelessWidget {
-  const TermsConditions({super.key});
+  const TermsConditions({
+    super.key,
+    this.alignment = WrapAlignment.center,
+    this.crossAxisAlignment = WrapCrossAlignment.center,
+    this.showPrefix = true,
+  });
+
+  final WrapAlignment alignment;
+  final WrapCrossAlignment crossAxisAlignment;
+  final bool showPrefix;
 
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      alignment: WrapAlignment.center,
-      crossAxisAlignment: WrapCrossAlignment.center,
+      alignment: alignment,
+      crossAxisAlignment: crossAxisAlignment,
       children: [
-        Text(
-          AppStrings.termsandconditions.tr,
-          style: const TextStyle(fontSize: 12),
-        ),
+        if (showPrefix)
+          Text(
+            AppStrings.termsandconditions.tr,
+            style: const TextStyle(fontSize: 12),
+          ),
+        if (showPrefix) const SizedBox(width: 4),
         CustomTextButton(
+          padding: EdgeInsets.zero,
           text: AppStrings.terms.tr,
-          onPressed: () {},
+          onPressed: () {
+            Get.to(() => const TermsConditionsView());
+          },
           fontSize: 12,
           textColor: Colors.lightBlue,
           fontWeight: FontWeight.w400,
         ),
-        Text(
-          ' ${AppStrings.and.tr} ',
-          style: const TextStyle(fontSize: 12),
-        ),
+        Text(' ${AppStrings.and.tr} ', style: const TextStyle(fontSize: 12)),
         CustomTextButton(
-          padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+          padding: EdgeInsets.zero,
           text: AppStrings.conditions.tr,
-          onPressed: () {},
+          onPressed: () {
+            Get.to(() => const PrivacyPolicyView());
+          },
           fontSize: 12,
           textColor: Colors.lightBlue,
           fontWeight: FontWeight.w400,
@@ -39,4 +54,3 @@ class TermsConditions extends StatelessWidget {
     );
   }
 }
-

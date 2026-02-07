@@ -8,6 +8,7 @@ import 'package:usta/Customer/core/utils/routes/routes.dart';
 import 'package:usta/Customer/data/repositories/customer_repository.dart';
 import 'package:usta/Customer/features/customer/notifications/controllers/customer_notifications_controller.dart';
 import 'package:usta/Customer/features/auth/controllers/auth_controller.dart';
+import 'package:usta/app/app_mode_controller.dart';
 
 class CustomerProfileController extends GetxController {
   final CustomerRepository _repo = Get.find<CustomerRepository>();
@@ -33,6 +34,13 @@ class CustomerProfileController extends GetxController {
 
   bool _profileLoaded = false;
   bool _settingsLoaded = false;
+
+  bool _isCustomerModeActive() {
+    if (!Get.isRegistered<AppModeController>()) return true;
+    final controller = AppModeController.to;
+    if (controller.isBootstrapping.value) return false;
+    return controller.mode.value == AppUserType.customer;
+  }
 
   @override
   void onInit() {
@@ -348,6 +356,7 @@ class CustomerProfileController extends GetxController {
     _profileLoaded = false;
     _settingsLoaded = false;
 
+    if (!_isCustomerModeActive()) return;
     if (Get.isRegistered<AuthController>(tag: 'customer')) {
       await Get.find<AuthController>(tag: 'customer').logout(remote: false);
     } else {

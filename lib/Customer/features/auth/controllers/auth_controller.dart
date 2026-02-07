@@ -20,14 +20,15 @@ import 'package:usta/Customer/core/utils/routes/routes.dart';
 import 'package:usta/Customer/data/repositories/customer_repository.dart';
 import 'package:usta/Customer/core/utils/app_snackbar.dart';
 import 'package:usta/app/app_mode_controller.dart';
-import 'package:usta/app/choose_user_type_view.dart';
 
 class AuthController extends GetxController {
   final CustomerRepository _repo = Get.find<CustomerRepository>();
 
   final TokenStorage _storage = Get.find<TokenStorage>(tag: 'customer');
 
-  final RealtimeController _realtime = Get.find<RealtimeController>(tag: 'customer');
+  final RealtimeController _realtime = Get.find<RealtimeController>(
+    tag: 'customer',
+  );
 
   final Rxn<CustomerProfile> profile = Rxn<CustomerProfile>();
 
@@ -59,6 +60,13 @@ class AuthController extends GetxController {
   static const _wrongAccountMessage =
       'هذا الحساب خاص بالحرفيين. من فضلك ادخل من صفحة الحرفي.';
 
+  bool _isCustomerModeActive() {
+    if (!Get.isRegistered<AppModeController>()) return true;
+    final controller = AppModeController.to;
+    if (controller.isBootstrapping.value) return false;
+    return controller.mode.value == AppUserType.customer;
+  }
+
   @override
   void onClose() {
     emailCtrl.dispose();
@@ -75,7 +83,6 @@ class AuthController extends GetxController {
 
     super.onClose();
   }
-
 
   Future<void> login() async {
     if (isLoading.value) return;
@@ -404,22 +411,18 @@ class AuthController extends GetxController {
     if (remote) {
       try {
         await _repo.logout();
-      } catch (_) {
-      }
+      } catch (_) {}
     }
 
     profile.value = null;
     _realtime.disconnect();
-    if (Get.isRegistered<AppModeController>()) {
-      final switched = await AppModeController.to.resetToChooser();
-      if (switched) {
-        Get.offAll(() => const ChooseUserTypeView());
-      } else {
-        Get.offAllNamed(AppRoutes.login);
-      }
-    } else {
-      Get.offAllNamed(AppRoutes.login);
+    if (!_isCustomerModeActive()) return;
+    if (Get.isRegistered<AppModeController>() &&
+        AppModeController.to.switcherAttached) {
+      await AppModeController.to.resetToChooser();
+      return;
     }
+    Get.offAllNamed(AppRoutes.login);
   }
 
   Future<void> _handleAuthSuccess(
@@ -535,8 +538,8 @@ class AuthController extends GetxController {
   }
 
   void _handleError(Object error) {
-    final message = error is ApiException && error.message != null
-        ? error.message!
+    final message = error is ApiException
+        ? error.message
         : AppStrings.couldNotCompleteRequest.tr;
     _showSnack(message, Colors.redAccent);
   }
@@ -566,7 +569,14 @@ class AuthController extends GetxController {
   }
 
   bool? _extractBoolFlag(Map<String, dynamic> payload) {
-    const keys = ['success', 'ok', 'valid', 'verified', 'isValid', 'isVerified'];
+    const keys = [
+      'success',
+      'ok',
+      'valid',
+      'verified',
+      'isValid',
+      'isVerified',
+    ];
     for (final key in keys) {
       final value = payload[key];
       if (value is bool) return value;
@@ -621,14 +631,11 @@ class _AccountCheckResult {
   const _AccountCheckResult._(this.status, this.profile);
 
   const _AccountCheckResult.ok(CustomerProfile profile)
-      : this._(_AccountCheckStatus.ok, profile);
+    : this._(_AccountCheckStatus.ok, profile);
 
   const _AccountCheckResult.wrongAccount()
-      : this._(_AccountCheckStatus.wrongAccount, null);
+    : this._(_AccountCheckStatus.wrongAccount, null);
 
   const _AccountCheckResult.unknown()
-      : this._(_AccountCheckStatus.unknown, null);
+    : this._(_AccountCheckStatus.unknown, null);
 }
-
-
-

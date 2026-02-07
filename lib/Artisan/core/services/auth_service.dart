@@ -290,7 +290,6 @@ import 'package:usta/Artisan/core/services/token_storage.dart';
 import 'package:usta/Artisan/core/utils/constants/api_endpoints.dart';
 import 'package:usta/Artisan/core/utils/routes/routes.dart';
 import 'package:usta/app/app_mode_controller.dart';
-import 'package:usta/app/choose_user_type_view.dart';
 import 'package:usta/Artisan/features/artisan/controllers/artisan_controller.dart';
 
 /// Centralized auth + refresh token manager for Artisan app.
@@ -318,11 +317,20 @@ class AuthService extends GetxService {
 
   RealtimeLifecycleService get _realtime =>
       Get.find<RealtimeLifecycleService>();
-  ConnectivityService get _connectivity => Get.find<ConnectivityService>(tag: 'artisan');
+  ConnectivityService get _connectivity =>
+      Get.find<ConnectivityService>(tag: 'artisan');
   String? get accessToken => _accessToken.value ?? _storage.accessToken;
   String? get refreshToken => _storage.refreshToken;
   bool get isAuthenticated => _authenticated.value;
   Stream<bool> get authenticatedStream => _authenticated.stream;
+
+  bool _isArtisanModeActive() {
+    if (!Get.isRegistered<AppModeController>()) return true;
+    final controller = AppModeController.to;
+    if (controller.isBootstrapping.value) return false;
+    return controller.mode.value == AppUserType.artisan;
+  }
+
   @override
   Future<void> onInit() async {
     await _storage.init();
@@ -334,6 +342,7 @@ class AuthService extends GetxService {
     }
     super.onInit();
   }
+
   Future<void> saveTokens({
     required String accessToken,
     String? refreshToken,
@@ -363,7 +372,8 @@ class AuthService extends GetxService {
     _accessToken.value = null;
     _updateAuthState(false);
   }
-Future<void> handlePostLoginRealtime() async {
+
+  Future<void> handlePostLoginRealtime() async {
     // 1- socket reconnect
     if (Get.isRegistered<RealtimeController>(tag: 'artisan')) {
       await Get.find<RealtimeController>(tag: 'artisan').reconnect();
@@ -408,6 +418,7 @@ Future<void> handlePostLoginRealtime() async {
     final candidate = refreshToken;
     if (candidate == null || candidate.isEmpty) {
       log('[AuthService] No refresh token available. Skipping refresh.');
+      _shouldLogoutAfterRefreshFailure = false;
       return false;
     }
 
@@ -542,6 +553,14 @@ Future<void> handlePostLoginRealtime() async {
     if (_isHandlingUnauthorized) return;
     _isHandlingUnauthorized = true;
 
+    final hasAccessToken = (accessToken ?? '').isNotEmpty;
+    final hasRefreshToken = (refreshToken ?? '').isNotEmpty;
+    final hasAnySessionToken = hasAccessToken || hasRefreshToken;
+    if (!hasAnySessionToken) {
+      _isHandlingUnauthorized = false;
+      return;
+    }
+
     if (!skipRefresh && !forceLogout) {
       final refreshed = await refreshTokens();
       if (refreshed) {
@@ -574,16 +593,17 @@ Future<void> handlePostLoginRealtime() async {
 
     await clearTokens();
     // Return to global chooser after logout
-    if (Get.isRegistered<AppModeController>()) {
-      final switched = await AppModeController.to.resetToChooser();
-      if (switched) {
-        Get.offAll(() => const ChooseUserTypeView());
-      } else {
-        Get.offAllNamed(AppRoutes.login);
-      }
-    } else {
-      Get.offAllNamed(AppRoutes.login);
+    if (!_isArtisanModeActive()) {
+      _isPerformingLogout = false;
+      return;
     }
+    if (Get.isRegistered<AppModeController>() &&
+        AppModeController.to.switcherAttached) {
+      await AppModeController.to.resetToChooser();
+      _isPerformingLogout = false;
+      return;
+    }
+    Get.offAllNamed(AppRoutes.login);
 
     _isPerformingLogout = false;
   }
@@ -633,4 +653,3 @@ Future<void> handlePostLoginRealtime() async {
     _authenticated.refresh();
   }
 }
-

@@ -37,9 +37,17 @@ class _LoginViewState extends State<LoginView> {
   Future<void> _goToChooseUserType() async {
     FocusScope.of(context).unfocus();
     if (Get.isRegistered<AppModeController>()) {
-      await AppModeController.to.resetToChooser();
+      try {
+        await AppModeController.to.resetToChooser();
+        return;
+      } catch (_) {
+        // Fallback to local navigation if global switch fails.
+      }
     }
-    Get.offAll(() => const ChooseUserTypeView());
+    if (!mounted) return;
+    if (Get.currentRoute != '/ChooseUserTypeView') {
+      Get.offAll(() => const ChooseUserTypeView());
+    }
   }
 
   @override
@@ -83,11 +91,11 @@ class _LoginViewState extends State<LoginView> {
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: CustomTextButton(
-                          text: AppStrings.forgotPaswword.tr,
-                          onPressed: () {
-                            pushNamedRoute(AppRoutes.forgetpassword);
-                          },
-                          textColor: AppColors.primaryDark,
+                            text: AppStrings.forgotPaswword.tr,
+                            onPressed: () {
+                              pushNamedRoute(AppRoutes.forgetpassword);
+                            },
+                            textColor: AppColors.primaryDark,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
@@ -105,17 +113,21 @@ class _LoginViewState extends State<LoginView> {
                                 ? () {}
                                 : () {
                                     if (formKey.currentState!.validate()) {
-                                      final email =
-                                          authController.emailCtrl.text.trim();
-                                      final phone =
-                                          authController.phoneCtrl.text.trim();
+                                      final email = authController
+                                          .emailCtrl
+                                          .text
+                                          .trim();
+                                      final phone = authController
+                                          .phoneCtrl
+                                          .text
+                                          .trim();
                                       if (email.isEmpty && phone.isEmpty) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           SnackBar(
                                             content: Text(
-                                              'ادخل الإيميل أو رقم الجوال'
-                                                  .tr,
+                                              'ادخل الإيميل أو رقم الجوال'.tr,
                                               style: const TextStyle(
                                                 fontFamily: 'Cairo',
                                               ),
@@ -184,6 +196,3 @@ class _LoginViewState extends State<LoginView> {
     );
   }
 }
-
-
-

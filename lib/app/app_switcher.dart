@@ -38,24 +38,27 @@ class _AppSwitcherState extends State<AppSwitcher> {
       }
       switch (_controller.mode.value) {
         case AppUserType.artisan:
-          final route = _controller.artisanInitialRoute.value ??
+          final route =
+              _controller.artisanInitialRoute.value ??
               artisan_routes.AppRoutes.login;
           return artisan_app.ArtisanApp(
             key: const ValueKey('artisan_app'),
             initialRoute: route,
           );
         case AppUserType.customer:
-          final route = _controller.customerInitialRoute.value ??
+          final route =
+              _controller.customerInitialRoute.value ??
               customer_routes.AppRoutes.login;
           return customer_app.CustomerApp(
             key: const ValueKey('customer_app'),
             initialRoute: route,
           );
         case AppUserType.none:
-        default:
-          return const GetMaterialApp(
+          return MaterialApp(
+            key: const ValueKey('chooser_app'),
             debugShowCheckedModeBanner: false,
-            home: ChooseUserTypeView(),
+            theme: ThemeData(fontFamily: 'Cairo'),
+            home: const ChooseUserTypeView(),
           );
       }
     });
@@ -69,11 +72,7 @@ class _BootstrapLoadingApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      ),
+      home: Scaffold(body: Center(child: CircularProgressIndicator())),
     );
   }
 }

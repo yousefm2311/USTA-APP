@@ -39,25 +39,21 @@ import 'package:usta/Artisan/features/auth/views/forget_password/presentation/vi
 import 'package:usta/Artisan/features/auth/views/forget_password/presentation/views/success.dart';
 import 'package:usta/Artisan/features/auth/views/loign_view.dart';
 import 'package:usta/Artisan/features/auth/views/register_view.dart';
-import 'package:usta/Artisan/features/choose_user_type_view.dart';
-
+import 'package:usta/app/choose_user_type_view.dart';
 
 abstract class AppRoutes {
   static List<GetPage> routes = [
-
     GetPage(
       name: login,
       page: () => const LoginView(),
       transition: Transition.cupertino,
       transitionDuration: kTransitionDuration,
-
     ),
     GetPage(
       name: register,
       page: () => RegisterView(),
       transition: Transition.cupertino,
       transitionDuration: kTransitionDuration,
-
     ),
     GetPage(
       name: activation,
@@ -273,7 +269,6 @@ abstract class AppRoutes {
       page: () => ChooseUserTypeView(),
       transition: Transition.cupertino,
       transitionDuration: kTransitionDuration,
-       
     ),
     GetPage(
       name: onboarding,
@@ -292,7 +287,8 @@ abstract class AppRoutes {
 
   static const String login = '/login';
   static const String chooseUserTypeView = '/chooseUserTypeView';
-  static const String artisanLocationSettingsView = '/artisanLocationSettingsView';
+  static const String artisanLocationSettingsView =
+      '/artisanLocationSettingsView';
   static const String customerBottomNaviBar = '/customerBottomNaviBar';
   static const String customerHomeView = '/customerHomeView';
   static const String artisanHistoryView = '/artisanHistoryView';
@@ -350,4 +346,3 @@ abstract class AppRoutes {
   static const String artisanProfileEditView = '/artisanProfileEditView';
   // static const String socketTestPage = '/socketTestPage';
 }
-

@@ -37,9 +37,17 @@ class _LoginViewState extends State<LoginView> {
   Future<void> _goToChooseUserType() async {
     FocusScope.of(context).unfocus();
     if (Get.isRegistered<AppModeController>()) {
-      await AppModeController.to.resetToChooser();
+      try {
+        await AppModeController.to.resetToChooser();
+        return;
+      } catch (_) {
+        // Fallback to local navigation if global switch fails.
+      }
     }
-    Get.offAll(() => const ChooseUserTypeView());
+    if (!mounted) return;
+    if (Get.currentRoute != '/ChooseUserTypeView') {
+      Get.offAll(() => const ChooseUserTypeView());
+    }
   }
 
   @override
@@ -165,5 +173,3 @@ class _LoginViewState extends State<LoginView> {
     );
   }
 }
-
-

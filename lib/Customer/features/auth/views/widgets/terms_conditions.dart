@@ -34,21 +34,18 @@ class TermsConditions extends StatelessWidget {
           padding: EdgeInsets.zero,
           text: AppStrings.terms.tr,
           onPressed: () {
-            Get.to(const TermsConditionsView());
+            Get.to(() => const TermsConditionsView());
           },
           fontSize: 12,
           textColor: Colors.lightBlue,
           fontWeight: FontWeight.w400,
         ),
-        Text(
-          ' ${AppStrings.and.tr} ',
-          style: const TextStyle(fontSize: 12),
-        ),
+        Text(' ${AppStrings.and.tr} ', style: const TextStyle(fontSize: 12)),
         CustomTextButton(
           padding: EdgeInsets.zero,
           text: AppStrings.conditions.tr,
           onPressed: () {
-            Get.to(const PrivacyPolicyView());
+            Get.to(() => const PrivacyPolicyView());
           },
           fontSize: 12,
           textColor: Colors.lightBlue,
@@ -58,4 +55,3 @@ class TermsConditions extends StatelessWidget {
     );
   }
 }
-
