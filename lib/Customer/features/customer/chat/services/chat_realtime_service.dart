@@ -358,12 +358,47 @@ class _PendingSubscription {
 
 Map<String, dynamic> _normalizeSocketPayload(Map<String, dynamic> data) {
   if (data['message'] is Map<String, dynamic>) {
-    return {
-      ...data,
-      ...((data['message'] as Map<String, dynamic>)),
-    }..remove('message');
+    final msg = Map<String, dynamic>.from(data['message'] as Map<String, dynamic>);
+
+    void setIfMissing(String key, dynamic value) {
+      if (msg.containsKey(key) || value == null) return;
+      if (value is String && value.isEmpty) return;
+      msg[key] = value;
+    }
+
+    setIfMissing('localId', data['localId']?.toString());
+    final reqId = _stringifyId(
+      data['requestId'] ??
+          data['request'] ??
+          data['request_id'] ??
+          msg['requestId'] ??
+          msg['request'] ??
+          msg['request_id'],
+    );
+    if (reqId.isNotEmpty) {
+      setIfMissing('requestId', reqId);
+    }
+    setIfMissing('customerId', data['customerId']?.toString());
+    setIfMissing('artisanId', data['artisanId']?.toString());
+    setIfMissing('otherId', data['otherId']?.toString());
+    setIfMissing('type', data['type']?.toString());
+    if (data['attachments'] is List && msg['attachments'] == null) {
+      msg['attachments'] = (data['attachments'] as List)
+          .map((e) => e.toString())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+    return msg;
   }
   return data;
 }
 
+String _stringifyId(dynamic raw) {
+  if (raw == null) return '';
+  if (raw is Map) {
+    final id = raw['_id'] ?? raw['id'];
+    return id?.toString() ?? '';
+  }
+  return raw.toString();
+}
 

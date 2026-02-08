@@ -17,6 +17,7 @@ class PushNotificationsService extends GetxService {
           : _ensureNotificationController();
 
   bool _initialized = false;
+  static const Duration _tokenTimeout = Duration(seconds: 8);
 
   Future<PushNotificationsService> init() async {
     if (_initialized) return this;
@@ -35,13 +36,16 @@ class PushNotificationsService extends GetxService {
     } catch (e) {
       debugPrint('FCM permission request failed: $e');
     }
+    String? token;
     try {
-      final token = await messaging.getToken();
-      if (token != null && token.isNotEmpty) {
-        await _persistAndRegister(token);
-      }
+      token = await messaging.getToken().timeout(_tokenTimeout);
+    } on TimeoutException {
+      debugPrint('FCM getToken timed out; will retry on refresh.');
     } catch (e) {
       debugPrint('FCM getToken failed (non-fatal): $e');
+    }
+    if (token != null && token.isNotEmpty) {
+      await _persistAndRegister(token);
     }
     messaging.onTokenRefresh.listen((newToken) {
       _persistAndRegister(newToken);
@@ -52,13 +56,16 @@ class PushNotificationsService extends GetxService {
 
   Future<void> refreshTokenRegistration() async {
     final messaging = FirebaseMessaging.instance;
+    String? token;
     try {
-      final token = await messaging.getToken();
-      if (token != null && token.isNotEmpty) {
-        await _persistAndRegister(token);
-      }
+      token = await messaging.getToken().timeout(_tokenTimeout);
+    } on TimeoutException {
+      debugPrint('FCM getToken timed out while refreshing token.');
     } catch (e) {
       debugPrint('FCM getToken failed (non-fatal): $e');
+    }
+    if (token != null && token.isNotEmpty) {
+      await _persistAndRegister(token);
     }
   }
 
@@ -87,5 +94,4 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   } catch (_) {
   }
 }
-
 
