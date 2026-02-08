@@ -159,6 +159,11 @@ class AppStrings {
   static const String reviewDatePlaceholder = "reviewDatePlaceholder";
   static const String reviewCountSuffix = "reviewCountSuffix";
   static const String replyReview = "replyReview";
+  static const String editReply = "editReply";
+  static const String yourReply = "yourReply";
+  static const String reviewNoComment = "reviewNoComment";
+  static const String reviewsEmptyTitle = "reviewsEmptyTitle";
+  static const String reviewsEmptySubtitle = "reviewsEmptySubtitle";
   static const String replyHint = "replyHint";
   static const String reviewsLoadFailed = "reviewsLoadFailed";
   static const String reviewReplyFailed = "reviewReplyFailed";
