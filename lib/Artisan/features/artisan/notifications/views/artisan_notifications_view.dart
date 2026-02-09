@@ -9,6 +9,7 @@ import 'package:usta/Artisan/features/artisan/notifications/controllers/notifica
 import 'package:usta/Artisan/features/artisan/notifications/views/artisan_notification_details_view.dart';
 import 'package:usta/Artisan/features/artisan/notifications/views/artisan_notifications_settings_view.dart';
 import 'package:usta/Artisan/features/artisan/requests/controllers/artisan_requests_controller.dart';
+import 'package:usta/Artisan/features/artisan/chat/views/artisan_chat_list_view.dart';
 
 class ArtisanNotificationsView extends StatefulWidget {
   const ArtisanNotificationsView({super.key});
@@ -61,7 +62,7 @@ class _ArtisanNotificationsViewState extends State<ArtisanNotificationsView> {
         if (controller.loading.value && controller.notifications.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
-        final list = controller.notifications;
+        final list = _groupedNotifications(controller.notifications);
         if (list.isEmpty) {
           return Center(child: Text(AppStrings.noData.tr));
         }
@@ -70,14 +71,26 @@ class _ArtisanNotificationsViewState extends State<ArtisanNotificationsView> {
           itemCount: list.length,
           itemBuilder: (context, index) {
             final n = list[index];
+            final isGroup = n['__groupType'] == 'chat_group';
+            final groupItems = isGroup
+                ? (n['__groupItems'] as List? ?? const [])
+                    .whereType<Map<String, dynamic>>()
+                    .toList()
+                : const <Map<String, dynamic>>[];
+            final groupCount =
+                (n['__groupCount'] is int) ? n['__groupCount'] as int : 0;
+            final groupUnread =
+                (n['__groupUnread'] is int) ? n['__groupUnread'] as int : 0;
             final title = n['title']?.toString() ?? '';
             final body = n['body']?.toString() ?? n['message']?.toString() ?? '';
-            final date = n['createdAt']?.toString() ?? '';
-            final read = n['read'] == true || (n['isRead'] == true);
+            final date = _formatDate(n['createdAt']);
+            final read = isGroup
+                ? groupUnread == 0
+                : (n['read'] == true || (n['isRead'] == true));
             final id = (n['id'] ?? n['_id'] ?? '').toString();
 
             return Dismissible(
-              key: Key(id.isNotEmpty ? id : '$index'),
+              key: Key(isGroup ? 'chat_group' : (id.isNotEmpty ? id : '$index')),
               direction: DismissDirection.endToStart,
               background: Container(
                 alignment: Alignment.centerRight,
@@ -89,19 +102,28 @@ class _ArtisanNotificationsViewState extends State<ArtisanNotificationsView> {
                 child: const Icon(Icons.delete, color: Colors.white, size: 28),
               ),
               onDismissed: (_) async {
-                if (index >= controller.notifications.length) return;
-                final current = controller.notifications[index];
-                controller.notifications.removeAt(index);
-                if (id.isNotEmpty) {
-                  await controller.markAsRead(id, addToDismissed: true);
+                if (isGroup) {
+                  await _dismissChatGroup(groupItems);
+                  return;
                 }
+                await controller.dismissNotification(n);
               },
               child: _notificationItem(
-                title: title,
-                message: body,
+                title: isGroup
+                    ? AppStrings.notifications.tr +
+                        (groupCount > 0 ? ' ($groupCount)' : '')
+                    : title,
+                message: isGroup ? body : body,
                 time: date,
                 read: read,
-                onTap: () => _handleTap(n, markRead: !read, id: id),
+                onTap: () {
+                  if (isGroup) {
+                    _markChatGroupRead(groupItems);
+                    Get.to(() => const ArtisanChatListView());
+                    return;
+                  }
+                  _handleTap(n, markRead: !read, id: id);
+                },
               ),
             );
           },
@@ -237,6 +259,138 @@ class _ArtisanNotificationsViewState extends State<ArtisanNotificationsView> {
     } else {
       Get.toNamed(AppRoutes.artisanRequestDetailsView, arguments: args);
     }
+  }
+
+  Future<void> _dismissChatGroup(List<Map<String, dynamic>> items) async {
+    for (final n in items) {
+      await controller.dismissNotification(n);
+    }
+  }
+
+  Future<void> _markChatGroupRead(List<Map<String, dynamic>> items) async {
+    for (final n in items) {
+      if (_isRead(n)) continue;
+      final id = (n['id'] ?? n['_id'] ?? '').toString();
+      if (id.isNotEmpty) {
+        await controller.markAsRead(id);
+      }
+    }
+  }
+
+  List<Map<String, dynamic>> _groupedNotifications(
+    List<Map<String, dynamic>> items,
+  ) {
+    if (items.isEmpty) return const [];
+    final chatItems = <Map<String, dynamic>>[];
+    final otherItems = <Map<String, dynamic>>[];
+    for (final item in items) {
+      if (_isChatNotification(item)) {
+        chatItems.add(item);
+      } else {
+        otherItems.add(item);
+      }
+    }
+    if (chatItems.isEmpty) return otherItems;
+    chatItems.sort((a, b) => _compareByDateDesc(a, b));
+    final latest = chatItems.first;
+    final unread = chatItems.where((n) => !_isRead(n)).length;
+    final group = <String, dynamic>{
+      '__groupType': 'chat_group',
+      '__groupCount': chatItems.length,
+      '__groupUnread': unread,
+      '__groupItems': chatItems,
+      'title': AppStrings.notifications.tr,
+      'body': latest['body'] ?? latest['message'] ?? latest['title'] ?? '',
+      'createdAt': latest['createdAt'],
+      'type': 'chat',
+    };
+    final combined = <Map<String, dynamic>>[
+      ...otherItems,
+      group,
+    ];
+    combined.sort((a, b) => _compareByDateDesc(a, b));
+    return combined;
+  }
+
+  int _compareByDateDesc(Map<String, dynamic> a, Map<String, dynamic> b) {
+    final da = _parseDate(a['createdAt']);
+    final db = _parseDate(b['createdAt']);
+    return db.compareTo(da);
+  }
+
+  DateTime _parseDate(dynamic raw) {
+    if (raw == null) return DateTime.fromMillisecondsSinceEpoch(0);
+    if (raw is DateTime) return raw;
+    final text = raw.toString();
+    if (text.isEmpty || text == 'null') {
+      return DateTime.fromMillisecondsSinceEpoch(0);
+    }
+    return DateTime.tryParse(text) ?? DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  String _formatDate(dynamic value) {
+    if (value == null) return '';
+    try {
+      final dt = value is DateTime
+          ? value
+          : DateTime.parse(value.toString()).toLocal();
+      final hh = dt.hour.toString().padLeft(2, '0');
+      final mm = dt.minute.toString().padLeft(2, '0');
+      return '${dt.day}/${dt.month}\n$hh:$mm';
+    } catch (_) {
+      return value.toString();
+    }
+  }
+
+  bool _isRead(Map<String, dynamic> item) =>
+      item['read'] == true || item['isRead'] == true;
+
+  bool _isChatNotification(Map<String, dynamic> item) {
+    final type = _normalizeType(
+      (item['type'] ?? item['category'] ?? item['kind'] ?? '').toString(),
+    );
+    if (type.contains('chat') || type.contains('message')) return true;
+    final payload = _normalizedPayload(item);
+    if (_pick(payload, ['chatId', 'conversationId', 'messageId']) != null) {
+      return true;
+    }
+    if (payload['direct'] != null || payload['isDirect'] != null) return true;
+    return false;
+  }
+
+  String _normalizeType(String raw) => raw.trim().toLowerCase();
+
+  String? _pick(Map<String, dynamic> payload, List<String> keys) {
+    for (final key in keys) {
+      final val = payload[key];
+      if (val == null) continue;
+      final text = val.toString().trim();
+      if (text.isNotEmpty) return text;
+    }
+    return null;
+  }
+
+  Map<String, dynamic> _normalizedPayload(Map<String, dynamic> base) {
+    final merged = <String, dynamic>{};
+    void add(dynamic value) {
+      final map = _asMap(value);
+      if (map != null) merged.addAll(map);
+    }
+
+    add(base);
+    add(base['data']);
+    add(base['payload']);
+    add(base['meta']);
+    add(base['extra']);
+    return merged;
+  }
+
+  Map<String, dynamic>? _asMap(dynamic value) {
+    if (value is Map<String, dynamic>) return Map<String, dynamic>.from(value);
+    if (value is Map) {
+      return Map<String, dynamic>.from(value);
+    }
+    return null;
   }
 
   void _openDetails(Map<String, dynamic> notification,
@@ -386,4 +540,3 @@ class _RequestMeta {
     required this.request,
   });
 }
-

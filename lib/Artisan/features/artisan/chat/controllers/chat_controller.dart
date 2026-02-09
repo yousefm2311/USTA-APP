@@ -1660,6 +1660,7 @@ void onArtisanInbox(Map<String, dynamic> payload) {
       ]),
       'title': title,
       'body': body,
+      'type': 'chat',
       'requestId': requestId,
       'read': false,
       'createdAt': _firstNonEmpty([
@@ -1983,4 +1984,3 @@ void onArtisanInbox(Map<String, dynamic> payload) {
     super.onClose();
   }
 }
-

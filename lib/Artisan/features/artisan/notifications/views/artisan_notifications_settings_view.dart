@@ -28,9 +28,9 @@ class _ArtisanNotificationsSettingsViewState
         ? Get.find<NotificationsController>()
         : Get.put(NotificationsController());
     if (controller.settings.isNotEmpty) {
-      marketing = controller.settings['marketing'] ?? marketing;
-      requests = controller.settings['requests'] ?? requests;
-      chat = controller.settings['chat'] ?? chat;
+      marketing = _toBool(controller.settings['marketing'], marketing);
+      requests = _toBool(controller.settings['requests'], requests);
+      chat = _toBool(controller.settings['chat'], chat);
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadSettings());
   }
@@ -40,9 +40,9 @@ class _ArtisanNotificationsSettingsViewState
     if (!mounted) return;
     setState(() {
       loaded = true;
-      marketing = fetched['marketing'] ?? marketing;
-      requests = fetched['requests'] ?? requests;
-      chat = fetched['chat'] ?? chat;
+      marketing = _toBool(fetched['marketing'], marketing);
+      requests = _toBool(fetched['requests'], requests);
+      chat = _toBool(fetched['chat'], chat);
     });
   }
 
@@ -112,5 +112,15 @@ class _ArtisanNotificationsSettingsViewState
       onChanged: onChanged,
     );
   }
-}
 
+  bool _toBool(dynamic value, bool fallback) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final v = value.trim().toLowerCase();
+      if (v == 'true' || v == '1' || v == 'yes') return true;
+      if (v == 'false' || v == '0' || v == 'no') return false;
+    }
+    return fallback;
+  }
+}

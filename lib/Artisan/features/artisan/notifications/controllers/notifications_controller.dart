@@ -5,6 +5,7 @@ import 'package:usta/Artisan/core/services/database/share_Prefs.dart';
 import 'package:usta/Artisan/core/utils/constants/app_strings.dart';
 import 'package:usta/Artisan/core/utils/widgets/app_snackbar.dart';
 import 'package:usta/Artisan/data/providers/artisan_api.dart';
+import 'package:usta/Artisan/features/artisan/profile/controllers/profile_controller.dart';
 
 class NotificationsController extends GetxController {
   final ArtisanApi _api = ArtisanApi();
@@ -86,8 +87,10 @@ class NotificationsController extends GetxController {
 
   Future<void> updateSettings(Map<String, dynamic> payload) async {
     try {
-      await _api.updateNotificationSettings(payload);
-      settings.assignAll({...settings, ...payload});
+      final normalized = _normalizeSettings(payload);
+      await _api.updateNotificationSettings(normalized);
+      settings.assignAll({...settings, ...normalized});
+      _syncProfileSettings(normalized);
       _showSnack(AppStrings.notificationSettingsUpdated.tr, isError: false);
     } catch (_) {
       _showSnack(AppStrings.notificationSettingsFailed.tr, isError: true);
@@ -99,14 +102,13 @@ class NotificationsController extends GetxController {
       final response = await _api.notificationsSettings();
       final data = ApiClient.instance.unwrapData(response);
       Map<String, dynamic> parsed = {};
-      if (data is Map<String, dynamic>) {
-        if (data['notifications'] is Map<String, dynamic>) {
-          parsed = data['notifications'] as Map<String, dynamic>;
-        } else if (data['settings'] is Map<String, dynamic>) {
-          parsed = data['settings'] as Map<String, dynamic>;
-        } else {
-          parsed = data;
-        }
+      parsed = _extractSettings(response);
+      if (parsed.isEmpty) parsed = _extractSettings(data);
+      if (parsed.isEmpty && response is Map<String, dynamic>) {
+        parsed = _extractSettings(response['data']);
+      }
+      if (parsed.isEmpty) {
+        parsed = _extractSettingsFromProfile();
       }
       if (parsed.isEmpty && settings.isNotEmpty) return settings;
       settings.assignAll(parsed);
@@ -129,6 +131,94 @@ class NotificationsController extends GetxController {
     return const [];
   }
 
+  Map<String, dynamic> _extractSettings(dynamic source) {
+    if (source == null) return {};
+    if (source is Map<String, dynamic>) {
+      if (source['notifications'] is Map) {
+        return _mapFrom(source['notifications']);
+      }
+      if (source['notificationSettings'] is Map) {
+        return _mapFrom(source['notificationSettings']);
+      }
+      if (source['settings'] is Map) {
+        return _mapFrom(source['settings']);
+      }
+      if (source['preferences'] is Map) {
+        return _mapFrom(source['preferences']);
+      }
+      if (source['prefs'] is Map) {
+        return _mapFrom(source['prefs']);
+      }
+      if (_looksLikeSettings(source)) {
+        return _mapFrom(source);
+      }
+    }
+    if (source is Map) {
+      return _extractSettings(source.cast<String, dynamic>());
+    }
+    return {};
+  }
+
+  Map<String, dynamic> _extractSettingsFromProfile() {
+    if (!Get.isRegistered<ProfileController>()) return {};
+    final profile = Get.find<ProfileController>().profile;
+    if (profile.isEmpty) return {};
+    final fromProfile = _extractSettings(profile);
+    if (fromProfile.isNotEmpty) return fromProfile;
+    if (profile['notifications'] is Map) {
+      return _mapFrom(profile['notifications']);
+    }
+    if (profile['notificationSettings'] is Map) {
+      return _mapFrom(profile['notificationSettings']);
+    }
+    return {};
+  }
+
+  Map<String, dynamic> _mapFrom(dynamic value) {
+    if (value is Map<String, dynamic>) return Map<String, dynamic>.from(value);
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return {};
+  }
+
+  bool _looksLikeSettings(Map<String, dynamic> map) {
+    if (map.containsKey('marketing') ||
+        map.containsKey('requests') ||
+        map.containsKey('chat')) {
+      return true;
+    }
+    return false;
+  }
+
+  Map<String, dynamic> _normalizeSettings(Map<String, dynamic> payload) {
+    final out = <String, dynamic>{};
+    for (final entry in payload.entries) {
+      out[entry.key] = _toBool(entry.value);
+    }
+    return out;
+  }
+
+  bool _toBool(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final v = value.trim().toLowerCase();
+      if (v == 'true' || v == '1' || v == 'yes') return true;
+      if (v == 'false' || v == '0' || v == 'no') return false;
+    }
+    return false;
+  }
+
+  void _syncProfileSettings(Map<String, dynamic> next) {
+    if (!Get.isRegistered<ProfileController>()) return;
+    final controller = Get.find<ProfileController>();
+    final profile = controller.profile;
+    if (profile.isEmpty) return;
+    final notif = _mapFrom(profile['notifications']);
+    notif.addAll(next);
+    profile['notifications'] = notif;
+    controller.profile.refresh();
+  }
+
   void _showSnack(String message, {bool isError = false}) {
     AppSnackBar.show(
       isError ? AppStrings.error.tr : AppStrings.success.tr,
@@ -137,4 +227,3 @@ class NotificationsController extends GetxController {
     );
   }
 }
-

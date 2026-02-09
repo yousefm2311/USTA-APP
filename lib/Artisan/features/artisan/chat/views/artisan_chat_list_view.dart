@@ -17,9 +17,12 @@ class _ArtisanChatListViewState extends State<ArtisanChatListView> {
   @override
   void initState() {
     super.initState();
-    controller.setChatScreenOpen(false);
-    controller.clearActive();
-    controller.fetchChats();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      controller.setChatScreenOpen(false);
+      controller.clearActive();
+      controller.fetchChats();
+    });
   }
 
   Future<void> _confirmDeleteChat({
@@ -335,4 +338,3 @@ class _ArtisanChatListViewState extends State<ArtisanChatListView> {
     );
   }
 }
-
