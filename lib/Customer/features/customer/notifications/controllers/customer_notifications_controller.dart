@@ -4,6 +4,7 @@ import 'package:usta/Customer/core/services/device_id_service.dart';
 import 'package:usta/Customer/core/services/network/api_exception.dart';
 import 'package:usta/Customer/core/services/token_storage.dart';
 import 'package:usta/Customer/data/repositories/customer_repository.dart';
+import 'package:usta/Customer/features/auth/controllers/auth_controller.dart';
 
 class CustomerNotificationsController extends GetxController {
   final CustomerRepository _repo = Get.find<CustomerRepository>();
@@ -57,6 +58,10 @@ class CustomerNotificationsController extends GetxController {
           .map<Map<String, dynamic>>((e) => e is Map<String, dynamic> ? e : {})
           .toList());
     } on ApiException catch (e) {
+      if (e.statusCode == 401 &&
+          Get.isRegistered<AuthController>(tag: 'customer')) {
+        Get.find<AuthController>(tag: 'customer').logout(remote: false);
+      }
       _notify(e.message, isError: true);
     } catch (_) {
       _notify('فشل تحميل الإشعارات'.tr, isError: true);
@@ -223,5 +228,4 @@ class CustomerNotificationsController extends GetxController {
     return false;
   }
 }
-
 

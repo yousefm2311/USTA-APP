@@ -14,22 +14,28 @@ class SocketManager {
   final status = SocketStatus.disconnected.obs;
   io.Socket? _socket;
   String? _authToken;
+  bool _isConnecting = false;
+  final List<_QueuedEmit> _pending = [];
 
   bool get isConnected => _socket?.connected ?? false;
 
   void connect({String? token}) {
     _authToken = token ?? _authToken;
+    if (_isConnecting || isConnected) return;
     status.value = SocketStatus.connecting;
+    _isConnecting = true;
 
     _socket?.dispose();
     _socket = io.io(
       ApiEndpoints.socketUrl,
       io.OptionBuilder()
-          .setTransports(['websocket'])
+          .setTransports(['websocket', 'polling'])
           .enableAutoConnect()
           .enableReconnection()
-          .setReconnectionDelay(2000)
-          .setReconnectionAttempts(5)
+          .setReconnectionDelay(1000)
+          .setReconnectionDelayMax(30000)
+          .setReconnectionAttempts(0)
+          .setTimeout(20000)
           .enableForceNew()
           .setPath('/socket.io/')
           .setExtraHeaders(_buildHeaders())
@@ -45,26 +51,44 @@ class SocketManager {
 
     _socket?.onConnect((_) {
       status.value = SocketStatus.connected;
+      _isConnecting = false;
       log('[SocketManager] Connected');
+      _flushPending();
     });
 
     _socket?.onDisconnect((reason) {
       status.value = SocketStatus.disconnected;
+      _isConnecting = false;
       log('[SocketManager] Disconnected: $reason');
     });
 
     _socket?.onError((error) {
       status.value = SocketStatus.disconnected;
+      _isConnecting = false;
       log('[SocketManager] Error: $error');
     });
 
     _socket?.onConnectError((error) {
       status.value = SocketStatus.disconnected;
+      _isConnecting = false;
       log('[SocketManager] Connect error: $error');
     });
+
+    _socket?.on('reconnect_attempt', (attempt) {
+      status.value = SocketStatus.connecting;
+      log('[SocketManager] Reconnect attempt #$attempt');
+    });
+
+    _socket?.on('reconnect', (_) {
+      status.value = SocketStatus.connected;
+      log('[SocketManager] Reconnected');
+    });
+
+    _socket?.connect();
   }
 
   void updateAuthToken(String? token) {
+    final changed = token != null && token.isNotEmpty && token != _authToken;
     _authToken = token;
     final opts = _socket?.io.options;
     if (opts != null) {
@@ -72,17 +96,31 @@ class SocketManager {
       opts['auth'] = _buildAuth();
       opts['query'] = _buildAuthQuery();
     }
+    if (changed && isConnected) {
+      reconnect();
+    }
   }
 
   void disconnect() {
+    _socket?.disconnect();
     _socket?.dispose();
     _socket = null;
     status.value = SocketStatus.disconnected;
+    _isConnecting = false;
+  }
+
+  void reconnect() {
+    if (_authToken == null || _authToken!.isEmpty) return;
+    disconnect();
+    connect(token: _authToken);
   }
 
   void emit(String event, dynamic data, {Function(dynamic)? ack}) {
     if (!isConnected) {
       log('[SocketManager] Queueing emit while disconnected: $event');
+      _pending.add(_QueuedEmit(event, data, ack));
+      _connectIfNeeded();
+      return;
     }
     log('[SocketManager] Emit $event -> $data');
     if (ack != null) {
@@ -130,5 +168,31 @@ class SocketManager {
     }
     return _authToken;
   }
+
+  void _connectIfNeeded() {
+    if (isConnected || _isConnecting) return;
+    if (_authToken == null || _authToken!.isEmpty) return;
+    connect(token: _authToken);
+  }
+
+  void _flushPending() {
+    if (!isConnected || _pending.isEmpty) return;
+    final items = List<_QueuedEmit>.from(_pending);
+    _pending.clear();
+    for (final item in items) {
+      if (item.ack != null) {
+        _socket?.emitWithAck(item.event, item.data, ack: item.ack);
+      } else {
+        _socket?.emit(item.event, item.data);
+      }
+    }
+  }
 }
 
+class _QueuedEmit {
+  final String event;
+  final dynamic data;
+  final Function(dynamic)? ack;
+
+  _QueuedEmit(this.event, this.data, this.ack);
+}

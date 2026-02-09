@@ -24,16 +24,43 @@ class RealtimeController extends GetxService {
     _socket.connect(token: token);
   }
 
-  void reconnect() => _connect();
+  void connectIfNeeded() {
+    final token = _storage.accessToken;
+    if (token == null || token.isEmpty) {
+      _socket.disconnect();
+      return;
+    }
+    _socket.updateAuthToken(token);
+    if (status.value == SocketStatus.connected ||
+        status.value == SocketStatus.connecting) {
+      return;
+    }
+    _socket.connect(token: token);
+  }
+
+  void reconnect() {
+    final token = _storage.accessToken;
+    if (token == null || token.isEmpty) {
+      _socket.disconnect();
+      return;
+    }
+    _socket.updateAuthToken(token);
+    _socket.reconnect();
+  }
 
   void setAuthToken(String? token) {
+    if (token == null || token.isEmpty) {
+      _socket.disconnect();
+      return;
+    }
     _socket.updateAuthToken(token);
-    if (!_socket.isConnected) _connect();
+    if (!_socket.isConnected) _socket.connect(token: token);
   }
 
   void disconnect() => SocketManager.instance.disconnect();
 
   void joinCustomerRoom(String customerId) {
+    if (customerId.isEmpty) return;
     emit('join', {
       'room': 'customer:$customerId',
       'userId': customerId,
@@ -95,5 +122,3 @@ class RealtimeController extends GetxService {
     }
   }
 }
-
-

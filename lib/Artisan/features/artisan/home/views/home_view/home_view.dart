@@ -667,27 +667,45 @@ class _ArtisanHomeViewState extends State<ArtisanHomeView>
             // border: Border.all(color: scheme.outline.withOpacity(0.12)),
           ),
           padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: primaryBlue.withOpacity(0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, size: 24, color: primaryBlue),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.body(context).copyWith(fontSize: 13),
-              ),
-            ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxH = constraints.maxHeight;
+              final compact = maxH < 78;
+              final iconSize = compact ? 38.0 : 44.0;
+              final glyphSize = compact ? 20.0 : 24.0;
+              final spacing = compact ? 6.0 : 10.0;
+              final fontSize = compact ? 12.0 : 13.0;
+              final maxLines = compact ? 1 : 2;
+              final lineHeight = compact ? 1.2 : 1.5;
+
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: iconSize,
+                    height: iconSize,
+                    decoration: BoxDecoration(
+                      color: primaryBlue.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, size: glyphSize, color: primaryBlue),
+                  ),
+                  SizedBox(height: spacing),
+                  Flexible(
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      maxLines: maxLines,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.body(context).copyWith(
+                        fontSize: fontSize,
+                        height: lineHeight,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),

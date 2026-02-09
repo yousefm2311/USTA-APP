@@ -318,14 +318,18 @@ Widget _headerCard(BuildContext context) {
                                   : Colors.white70,
                             ),
                             const SizedBox(width: 6),
-                            Text(
-                              online
-                                  ? AppStrings.online.tr
-                                  : AppStrings.offline.tr,
-                              style: const TextStyle(
-                                fontFamily: 'Cairo',
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                            Flexible(
+                              child: Text(
+                                online
+                                    ? AppStrings.online.tr
+                                    : AppStrings.offline.tr,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontFamily: 'Cairo',
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],
@@ -337,6 +341,8 @@ Widget _headerCard(BuildContext context) {
                           border: Colors.white.withOpacity(0.28),
                           child: Text(
                             status,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontFamily: 'Cairo',
                               color: Colors.white,
@@ -1309,4 +1315,3 @@ class _StatCard extends StatelessWidget {
     );
   }
 }
-

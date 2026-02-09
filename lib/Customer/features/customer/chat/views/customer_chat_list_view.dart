@@ -5,7 +5,9 @@ import 'package:usta/Customer/core/utils/constants/app_text_style.dart';
 import 'package:usta/Customer/core/widgets/shimmer_skeletons.dart';
 import 'package:usta/Customer/features/customer/chat/controller/chat_controller.dart';
 import 'package:usta/Customer/features/customer/chat/views/customer_chat_room_view.dart';
+import 'package:usta/Customer/features/customer/chat/services/chat_realtime_service.dart';
 import 'package:usta/Customer/features/customer/customer_navigation_controller.dart';
+import 'package:usta/Customer/core/realtime/realtime_controller.dart';
 
 class CustomerChatListView extends StatefulWidget {
   const CustomerChatListView({super.key});
@@ -35,7 +37,6 @@ class _CustomerChatListViewState extends State<CustomerChatListView> {
   @override
   void dispose() {
     _navWorker?.dispose();
-    controller.stopChatsPolling();
     super.dispose();
   }
 
@@ -43,13 +44,17 @@ class _CustomerChatListViewState extends State<CustomerChatListView> {
     final shouldBeActive = index == 2;
     if (shouldBeActive && !_active) {
       _active = true;
+      if (Get.isRegistered<ChatRealtimeService>(tag: 'customer')) {
+        Get.find<ChatRealtimeService>(tag: 'customer').start();
+      }
+      if (Get.isRegistered<RealtimeController>(tag: 'customer')) {
+        Get.find<RealtimeController>(tag: 'customer').connectIfNeeded();
+      }
       controller.fetchChats();
-      controller.startChatsPolling();
       return;
     }
     if (!shouldBeActive && _active) {
       _active = false;
-      controller.stopChatsPolling();
     }
   }
 
@@ -82,7 +87,9 @@ class _CustomerChatListViewState extends State<CustomerChatListView> {
     final type = chat['type']?.toString().toLowerCase();
     final artisanId =
         chat['artisanId']?.toString() ?? chat['otherId']?.toString() ?? '';
-    if (type != 'direct' || artisanId.isEmpty) return;
+    final canDelete = type == 'direct' && artisanId.isNotEmpty;
+    final canHide = !canDelete;
+    if (!canDelete && !canHide) return;
 
     showModalBottomSheet(
       context: context,
@@ -90,36 +97,48 @@ class _CustomerChatListViewState extends State<CustomerChatListView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(Icons.delete_outline),
-              title: Text('حذف المحادثة'.tr),
-              subtitle:
-                  Text('سيتم حذف جميع الرسائل المباشرة مع هذا الحرفي'.tr),
-              onTap: () async {
-                Navigator.of(context).pop();
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: Text('تأكيد الحذف'.tr),
-                    content: Text('سيتم حذف المحادثة بالكامل. هل أنت متأكد؟'.tr),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: Text('إلغاء'.tr),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: Text('حذف'.tr),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirm == true) {
-                  await controller.deleteDirectConversation(artisanId);
-                  await controller.fetchChats();
-                }
-              },
-            ),
+            if (canDelete)
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: Text('حذف المحادثة'.tr),
+                subtitle:
+                    Text('سيتم حذف جميع الرسائل المباشرة مع هذا الحرفي'.tr),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      title: Text('تأكيد الحذف'.tr),
+                      content:
+                          Text('سيتم حذف المحادثة بالكامل. هل أنت متأكد؟'.tr),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: Text('إلغاء'.tr),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: Text('حذف'.tr),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    await controller.deleteDirectConversation(artisanId);
+                    await controller.fetchChats();
+                  }
+                },
+              ),
+            if (canHide)
+              ListTile(
+                leading: const Icon(Icons.hide_source),
+                title: Text('إخفاء المحادثة'.tr),
+                subtitle: Text('سيتم إخفاء المحادثة من القائمة'.tr),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  controller.hideChat(chat);
+                },
+              ),
           ],
         ),
       ),
@@ -335,5 +354,3 @@ class _CustomerChatListViewState extends State<CustomerChatListView> {
     );
   }
 }
-
-

@@ -14,6 +14,7 @@ class ChatRealtimeService extends GetxService implements RealtimeAwareService {
   final List<_QueuedMessage> _outbox = [];
   final List<_PendingRead> _pendingReads = [];
   final List<_PendingSubscription> _pendingSubs = [];
+  final Map<String, _PendingSubscription> _knownSubs = {};
   StreamSubscription<SocketStatus>? _statusSub;
   bool _started = false;
   String? _lastRequestSub;
@@ -32,16 +33,24 @@ class ChatRealtimeService extends GetxService implements RealtimeAwareService {
   }
 
   @override
-  Future<void> start() async {
-    if (_started) return;
-    _started = true;
+  Future<void> start({bool force = false}) async {
+    if (_started && !force) return;
+    if (!_started) {
+      _started = true;
+    }
+    _ensureChatController();
     _listenConnection();
+    _rt.connectIfNeeded();
     if (_rt.status.value == SocketStatus.connected) {
       _registerEvents();
       _flushSubscriptions();
+      _resubscribeKnown();
       _resubscribeActive();
       _flushOutbox();
       _flushReads();
+      if (_chatController != null) {
+        _chatController!.fetchChats();
+      }
     }
   }
 
@@ -51,9 +60,11 @@ class ChatRealtimeService extends GetxService implements RealtimeAwareService {
     _started = false;
     await _statusSub?.cancel();
     _statusSub = null;
+    _chatController = null;
     _outbox.clear();
     _pendingReads.clear();
     _pendingSubs.clear();
+    _knownSubs.clear();
     _lastRequestSub = null;
     _lastDirectCustomer = null;
     _lastDirectArtisan = null;
@@ -62,14 +73,21 @@ class ChatRealtimeService extends GetxService implements RealtimeAwareService {
   void _listenConnection() {
     _statusSub?.cancel();
     _statusSub = _rt.status.stream.listen((status) {
+      if (status == SocketStatus.disconnected) {
+        _lastRequestSub = null;
+        _lastDirectCustomer = null;
+        _lastDirectArtisan = null;
+        _rt.connectIfNeeded();
+      }
       if (status == SocketStatus.connected) {
         _registerEvents();
         _flushSubscriptions();
+        _resubscribeKnown();
         _resubscribeActive();
         _flushOutbox();
         _flushReads();
         _ensureChatController();
-        if (_chatController != null && _chatController!.chats.isEmpty) {
+        if (_chatController != null) {
           _chatController!.fetchChats();
         }
       }
@@ -88,12 +106,11 @@ class ChatRealtimeService extends GetxService implements RealtimeAwareService {
 
     _rt.onEvent(RealtimeEvents.chatMessage, (data) {
       _ensureChatController();
-      if (!_started ||
-          data is! Map<String, dynamic> ||
-          _chatController == null) {
+      if (!_started || data is! Map || _chatController == null) {
         return;
       }
-      _chatController!.onSocketMessage(_normalizeSocketPayload(data));
+      final map = Map<String, dynamic>.from(data);
+      _chatController!.onSocketMessage(_normalizeSocketPayload(map));
     });
 
     _rt.onEvent(RealtimeEvents.chatRead, (data) {
@@ -106,12 +123,11 @@ class ChatRealtimeService extends GetxService implements RealtimeAwareService {
 
     _rt.onEvent(RealtimeEvents.directMessage, (data) {
       _ensureChatController();
-      if (!_started ||
-          data is! Map<String, dynamic> ||
-          _chatController == null) {
+      if (!_started || data is! Map || _chatController == null) {
         return;
       }
-      _chatController!.onSocketDirectMessage(_normalizeSocketPayload(data));
+      final map = Map<String, dynamic>.from(data);
+      _chatController!.onSocketDirectMessage(_normalizeSocketPayload(map));
     });
 
     _rt.onEvent(RealtimeEvents.directRead, (data) {
@@ -149,32 +165,36 @@ class ChatRealtimeService extends GetxService implements RealtimeAwareService {
 
   void subscribeToRequest(String requestId) {
     if (requestId.isEmpty) return;
-    if (_lastRequestSub == requestId) return;
-    _lastRequestSub = requestId;
+    _rememberSub(_PendingSubscription(requestId: requestId));
     if (_rt.status.value != SocketStatus.connected) {
       _queueSub(_PendingSubscription(requestId: requestId));
-      _rt.reconnect();
+      _rt.connectIfNeeded();
       return;
     }
+    if (_lastRequestSub == requestId) return;
+    _lastRequestSub = requestId;
     _rt.emit(RealtimeEvents.chatSubscribe, {'requestId': requestId});
   }
 
   void subscribeToDirect(String customerId, {String? artisanId}) {
     if (customerId.isEmpty && (artisanId == null || artisanId.isEmpty)) return;
+    _rememberSub(
+      _PendingSubscription(customerId: customerId, artisanId: artisanId),
+    );
+    if (_rt.status.value != SocketStatus.connected) {
+      _queueSub(_PendingSubscription(
+        customerId: customerId,
+        artisanId: artisanId,
+      ));
+      _rt.connectIfNeeded();
+      return;
+    }
     if (_lastDirectCustomer == customerId &&
         (_lastDirectArtisan ?? '') == (artisanId ?? '')) {
       return;
     }
     _lastDirectCustomer = customerId;
     _lastDirectArtisan = artisanId;
-    if (_rt.status.value != SocketStatus.connected) {
-      _queueSub(_PendingSubscription(
-        customerId: customerId,
-        artisanId: artisanId,
-      ));
-      _rt.reconnect();
-      return;
-    }
     _rt.emit(RealtimeEvents.directSubscribe, {
       if (customerId.isNotEmpty) 'customerId': customerId,
       if (artisanId != null && artisanId.isNotEmpty) 'artisanId': artisanId,
@@ -324,9 +344,45 @@ class ChatRealtimeService extends GetxService implements RealtimeAwareService {
     }
   }
 
+  void _rememberSub(_PendingSubscription sub) {
+    final key = _subKey(sub);
+    if (key.isEmpty) return;
+    _knownSubs[key] = sub;
+  }
+
+  void _resubscribeKnown() {
+    if (_knownSubs.isEmpty) return;
+    final subs = _knownSubs.values.toList();
+    for (final sub in subs) {
+      if (sub.requestId != null && sub.requestId!.isNotEmpty) {
+        subscribeToRequest(sub.requestId!);
+        continue;
+      }
+      subscribeToDirect(
+        sub.customerId ?? '',
+        artisanId: sub.artisanId,
+      );
+    }
+  }
+
+  String _subKey(_PendingSubscription sub) {
+    if (sub.requestId != null && sub.requestId!.isNotEmpty) {
+      return 'request:${sub.requestId}';
+    }
+    final customerId = sub.customerId ?? '';
+    final artisanId = sub.artisanId ?? '';
+    if (customerId.isEmpty && artisanId.isEmpty) return '';
+    return 'direct:$customerId:$artisanId';
+  }
+
   void _ensureChatController() {
-    if (_chatController == null && Get.isRegistered<ChatController>(tag: 'customer')) {
-      _chatController = Get.find<ChatController>(tag: 'customer');
+    if (!Get.isRegistered<ChatController>(tag: 'customer')) {
+      _chatController = null;
+      return;
+    }
+    final current = Get.find<ChatController>(tag: 'customer');
+    if (_chatController != current) {
+      _chatController = current;
     }
   }
 
@@ -357,8 +413,8 @@ class _PendingSubscription {
 }
 
 Map<String, dynamic> _normalizeSocketPayload(Map<String, dynamic> data) {
-  if (data['message'] is Map<String, dynamic>) {
-    final msg = Map<String, dynamic>.from(data['message'] as Map<String, dynamic>);
+  if (data['message'] is Map) {
+    final msg = Map<String, dynamic>.from(data['message'] as Map);
 
     void setIfMissing(String key, dynamic value) {
       if (msg.containsKey(key) || value == null) return;
@@ -401,4 +457,3 @@ String _stringifyId(dynamic raw) {
   }
   return raw.toString();
 }
-

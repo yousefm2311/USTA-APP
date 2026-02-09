@@ -104,7 +104,11 @@ class SocketService extends GetxService {
     if (!_authService.isAuthenticated || token == null || token.isEmpty) {
       return;
     }
-    if (isConnected || _isConnecting) return;
+    if (isConnected ||
+        _isConnecting ||
+        _status.value == SocketStatus.connecting) {
+      return;
+    }
     await connect();
   }
 
@@ -115,7 +119,7 @@ class SocketService extends GetxService {
       log('[SocketService] Skip connect: no token/auth');
       return;
     }
-    if (_isConnecting) return;
+    if (_isConnecting || _status.value == SocketStatus.connecting) return;
 
     final reachable = await _connectivity.verifyServerReachable(token: token);
     if (!reachable) {
@@ -336,4 +340,3 @@ class _QueuedEmit {
 
   _QueuedEmit(this.event, this.data, this.ack);
 }
-

@@ -17,7 +17,7 @@ class ConnectivityService extends GetxService with WidgetsBindingObserver {
   bool? _lastNotifiedOnline;
 
   static const Duration _cacheDuration = Duration(seconds: 20);
-  static const Duration _probeTimeout = Duration(seconds: 4);
+  static const Duration _probeTimeout = Duration(seconds: 8);
   static const int _maxFailuresBeforeOffline = 2;
   static const String _probePath = '/health';
 
@@ -50,6 +50,11 @@ class ConnectivityService extends GetxService with WidgetsBindingObserver {
       _lastCheckAt = now;
       _lastResult = ok;
       return ok;
+    } on TimeoutException catch (error) {
+      log('[ConnectivityService] Connectivity probe timed out: $error');
+      _lastCheckAt = now;
+      _lastResult = false;
+      return false;
     } on SocketException catch (error, stack) {
       log('[ConnectivityService] Connectivity probe failed: $error',
           stackTrace: stack);
@@ -189,4 +194,3 @@ class ConnectivityService extends GetxService with WidgetsBindingObserver {
     }
   }
 }
-

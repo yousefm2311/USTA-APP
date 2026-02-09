@@ -1,10 +1,12 @@
 import 'package:get/get.dart';
 import 'package:usta/Customer/data/repositories/customer_repository.dart';
 import 'package:usta/Customer/core/services/network/api_exception.dart';
+import 'package:usta/Customer/core/services/token_storage.dart';
 import 'package:usta/Customer/features/auth/controllers/auth_controller.dart';
 
 class CustomerWalletController extends GetxController {
   final CustomerRepository _repo = Get.find<CustomerRepository>();
+  final TokenStorage _storage = Get.find<TokenStorage>(tag: 'customer');
 
   final Rxn<num> balance = Rxn<num>();
   final RxList<Map<String, dynamic>> history = <Map<String, dynamic>>[].obs;
@@ -15,11 +17,18 @@ class CustomerWalletController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchWallet();
-    fetchHistory();
+    if (_hasAccessToken()) {
+      fetchWallet();
+      fetchHistory();
+    }
   }
 
   Future<void> fetchWallet() async {
+    if (!_hasAccessToken()) {
+      balance.value = null;
+      loadingBalance.value = false;
+      return;
+    }
     loadingBalance.value = true;
     try {
       final response = await _repo.api.wallet();
@@ -42,6 +51,11 @@ class CustomerWalletController extends GetxController {
   }
 
   Future<void> fetchHistory() async {
+    if (!_hasAccessToken()) {
+      history.clear();
+      loadingHistory.value = false;
+      return;
+    }
     loadingHistory.value = true;
     try {
       final response = await _repo.api.walletHistory();
@@ -80,6 +94,10 @@ class CustomerWalletController extends GetxController {
       recharging.value = false;
     }
   }
-}
 
+  bool _hasAccessToken() {
+    final access = _storage.accessToken;
+    return access != null && access.isNotEmpty;
+  }
+}
 

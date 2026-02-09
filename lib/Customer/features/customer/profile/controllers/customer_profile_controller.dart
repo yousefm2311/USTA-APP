@@ -46,12 +46,14 @@ class CustomerProfileController extends GetxController {
   void onInit() {
     super.onInit();
 
-    if (!_settingsLoaded) {
-      _loadRemoteSettings();
-    }
+    if (_hasAccessToken()) {
+      if (!_settingsLoaded) {
+        _loadRemoteSettings();
+      }
 
-    if (!_profileLoaded) {
-      refreshProfile();
+      if (!_profileLoaded) {
+        refreshProfile();
+      }
     }
   }
 
@@ -61,6 +63,11 @@ class CustomerProfileController extends GetxController {
   }) async {
     if (refreshing.value) return;
     if (_profileLoaded && !force) return;
+    if (!_hasAccessToken()) {
+      refreshing.value = false;
+      if (showLoader) loading.value = false;
+      return;
+    }
 
     refreshing.value = true;
     if (showLoader) loading.value = true;
@@ -320,6 +327,7 @@ class CustomerProfileController extends GetxController {
     }
   }
   Future<void> _loadRemoteSettings() async {
+    if (!_hasAccessToken()) return;
     try {
       final res = await _repo.api.getSettings();
       final data =
@@ -382,6 +390,10 @@ class CustomerProfileController extends GetxController {
       ),
     );
   }
-}
 
+  bool _hasAccessToken() {
+    final access = _storage.accessToken;
+    return access != null && access.isNotEmpty;
+  }
+}
 

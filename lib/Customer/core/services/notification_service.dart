@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -5,6 +6,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
+import 'package:usta/Customer/core/services/token_storage.dart';
+import 'package:usta/Customer/firebase_options.dart';
 import 'package:usta/Customer/features/customer/notifications/controllers/customer_notifications_controller.dart';
 
 
@@ -19,12 +22,31 @@ class NotificationService {
   static const _channelId = 'high_importance_channel';
   static const _channelName = 'High Importance Notifications';
   static const _channelDescription = 'Used for important notifications.';
+  static const _tokenTimeout = Duration(seconds: 8);
 
   bool _initialized = false;
 
   Future<void> init() async {
     if (_initialized) return;
-    _initialized = true;
+    if (Firebase.apps.isEmpty) {
+      try {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('NotificationService Firebase init failed: $e');
+        }
+        return;
+      }
+    }
+    try {
+      final supported = await _fcm.isSupported();
+      if (!supported) {
+        _initialized = true;
+        return;
+      }
+    } catch (_) {}
 
     await _requestPermission();
     await _initLocal();
@@ -32,6 +54,8 @@ class NotificationService {
     await _setupInterceptors();
     await _handleInitialMessage();
     await _logFcmToken();
+
+    _initialized = true;
   }
 
   Future<void> _requestPermission() async {
@@ -172,7 +196,14 @@ class NotificationService {
 
   Future<void> _logFcmToken() async {
     try {
-      final token = await _fcm.getToken();
+      final cached = _readCachedToken();
+      if (cached != null && cached.isNotEmpty) {
+        await sendTokenToBackend(cached);
+        return;
+      }
+      final supported = await _fcm.isSupported();
+      if (!supported) return;
+      final token = await _fcm.getToken().timeout(_tokenTimeout);
       if (token == null || token.isEmpty) {
         if (kDebugMode) debugPrint('FCM token unavailable yet.');
         return;
@@ -183,9 +214,15 @@ class NotificationService {
       if (kDebugMode) {
         debugPrint('Failed to get FCM token: ${e.code} ${e.message}');
       }
+    } on TimeoutException {
+      if (kDebugMode) debugPrint('FCM getToken timed out.');
     } catch (e) {
       if (kDebugMode) debugPrint('Failed to get FCM token: $e');
     }
   }
-}
 
+  String? _readCachedToken() {
+    if (!Get.isRegistered<TokenStorage>(tag: 'customer')) return null;
+    return Get.find<TokenStorage>(tag: 'customer').fcmToken;
+  }
+}

@@ -36,6 +36,7 @@ class FcmService extends GetxService {
     Duration(seconds: 15),
     Duration(seconds: 45),
   ];
+  static const Duration _tokenTimeout = Duration(seconds: 8);
 
   Future<FcmService> init() async {
     if (_initialized) return this;
@@ -211,7 +212,13 @@ class FcmService extends GetxService {
 
   Future<String?> _safeGetToken() async {
     try {
-      return await _messaging.getToken();
+      if (Firebase.apps.isEmpty) return null;
+      final supported = await _messaging.isSupported();
+      if (!supported) return null;
+      return await _messaging.getToken().timeout(_tokenTimeout);
+    } on TimeoutException catch (error) {
+      log('[FcmService] getToken timed out: $error');
+      return null;
     } on FirebaseException catch (error, stack) {
       log('[FcmService] getToken failed: $error', stackTrace: stack);
       return null;
@@ -268,4 +275,3 @@ class FcmService extends GetxService {
     super.onClose();
   }
 }
-

@@ -11,6 +11,8 @@ import 'package:usta/Customer/core/services/token_storage.dart';
 import 'package:usta/Customer/data/models/customer_profile.dart';
 import 'package:usta/Customer/features/customer/customer_navigation_controller.dart';
 import 'package:usta/Customer/features/customer/notifications/controllers/customer_notifications_controller.dart';
+import 'package:usta/Customer/features/customer/chat/services/chat_realtime_service.dart';
+import 'package:usta/Customer/features/customer/chat/controller/chat_controller.dart';
 
 import 'package:usta/Customer/core/utils/constants/app_colors.dart';
 
@@ -418,6 +420,12 @@ class AuthController extends GetxController {
 
     profile.value = null;
     _realtime.disconnect();
+    if (Get.isRegistered<ChatRealtimeService>(tag: 'customer')) {
+      await Get.find<ChatRealtimeService>(tag: 'customer').stop();
+    }
+    if (Get.isRegistered<ChatController>(tag: 'customer')) {
+      Get.find<ChatController>(tag: 'customer').resetForLogout();
+    }
     if (!_isCustomerModeActive()) return;
     if (Get.isRegistered<AppModeController>() &&
         AppModeController.to.switcherAttached) {
@@ -450,14 +458,16 @@ class AuthController extends GetxController {
 
     if (extractedProfile != null) {
       profile.value = extractedProfile;
-      _realtime.joinCustomerRoom(extractedProfile.id);
     }
 
     final token = _storage.accessToken;
     if (token != null && token.isNotEmpty) {
       _realtime.setAuthToken(token);
+      _realtime.connectIfNeeded();
     }
-
+    if (extractedProfile != null) {
+      _realtime.joinCustomerRoom(extractedProfile.id);
+    }
     if (Get.isRegistered<CustomerNotificationsController>()) {
       final notifications = Get.find<CustomerNotificationsController>();
       await notifications.ensureRegisteredFcm();
@@ -466,6 +476,10 @@ class AuthController extends GetxController {
     if (Get.isRegistered<PushNotificationsService>()) {
       await Get.find<PushNotificationsService>().refreshTokenRegistration();
     }
+    final chatController = Get.isRegistered<ChatController>(tag: 'customer')
+        ? Get.find<ChatController>(tag: 'customer')
+        : Get.put(ChatController(), tag: 'customer', permanent: true);
+    await chatController.onLogin();
 
     if (navigateHome) {
       _resetCustomerHomeTab();

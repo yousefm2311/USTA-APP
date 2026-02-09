@@ -205,6 +205,7 @@
 
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:usta/Artisan/core/services/auth_service.dart';
@@ -248,15 +249,17 @@ class ApiClient extends GetxService {
       ),
     );
 
-    /// Logging (as before)
-    _dio.interceptors.add(
-      PrettyDioLogger(
-        requestHeader: true,
-        requestBody: true,
-        responseBody: true,
-        compact: true,
-      ),
-    );
+    /// Logging (debug only, avoid leaking secrets)
+    if (kDebugMode) {
+      _dio.interceptors.add(
+        PrettyDioLogger(
+          requestHeader: false,
+          requestBody: false,
+          responseBody: false,
+          compact: true,
+        ),
+      );
+    }
 
     /// ⭐ أهم إضافة لحل refresh / retry بدون مشاكل
     _dio.interceptors.add(
@@ -385,4 +388,3 @@ class ApiClient extends GetxService {
     return response;
   }
 }
-

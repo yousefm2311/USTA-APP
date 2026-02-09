@@ -3,6 +3,7 @@ import 'package:usta/Customer/core/realtime/events.dart';
 import 'package:usta/Customer/core/realtime/realtime_controller.dart';
 import 'package:usta/Customer/core/services/network/api_exception.dart';
 import 'package:usta/Customer/core/services/settings/nearby_radius_settings.dart';
+import 'package:usta/Customer/core/services/token_storage.dart';
 import 'package:usta/Customer/data/repositories/customer_repository.dart';
 import 'package:usta/Customer/features/auth/controllers/auth_controller.dart';
 import 'package:usta/Customer/core/utils/app_snackbar.dart';
@@ -10,6 +11,7 @@ import 'package:usta/Customer/core/utils/app_snackbar.dart';
 class CustomerRequestsController extends GetxController {
   final CustomerRepository _repo = Get.find<CustomerRepository>();
   final RealtimeController _rt = Get.find<RealtimeController>(tag: 'customer');
+  final TokenStorage _storage = Get.find<TokenStorage>(tag: 'customer');
 
   final RxList<Map<String, dynamic>> activeRequests =
       <Map<String, dynamic>>[].obs;
@@ -43,12 +45,14 @@ class CustomerRequestsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    if (!_socketsBound) {
-      _listenSockets();
-      _socketsBound = true;
+    if (_hasAccessToken()) {
+      if (!_socketsBound) {
+        _listenSockets();
+        _socketsBound = true;
+      }
+      fetchActiveRequests();
+      fetchHistoryRequests();
     }
-    fetchActiveRequests();
-    fetchHistoryRequests();
     if (!_serviceTypesLoaded) {
       loadServiceTypes();
     }
@@ -66,6 +70,10 @@ class CustomerRequestsController extends GetxController {
   }
   Future<void> fetchActiveRequests({bool force = false}) async {
     if (_activeLoaded && !force) return;
+    if (!_hasAccessToken()) {
+      loadingActive.value = false;
+      return;
+    }
 
     loadingActive.value = true;
     try {
@@ -76,6 +84,10 @@ class CustomerRequestsController extends GetxController {
       activeRequests.assignAll(list);
       _activeLoaded = true;
     } on ApiException catch (e) {
+      if (e.statusCode == 401 &&
+          Get.isRegistered<AuthController>(tag: 'customer')) {
+        Get.find<AuthController>(tag: 'customer').logout(remote: false);
+      }
       _handleError(e, fallback: 'تعذّر جلب الطلبات النشطة'.tr);
     } catch (e) {
       _showError('حدث خطأ غير متوقع'.tr);
@@ -85,6 +97,10 @@ class CustomerRequestsController extends GetxController {
   }
   Future<void> fetchHistoryRequests({bool force = false}) async {
     if (_historyLoaded && !force) return;
+    if (!_hasAccessToken()) {
+      loadingHistory.value = false;
+      return;
+    }
     loadingHistory.value = true;
     try {
       final response = await _repo.api.requestsHistory();
@@ -394,6 +410,11 @@ class CustomerRequestsController extends GetxController {
     if (key.isEmpty) return null;
     return _serviceTypeIds[key];
   }
+
+  bool _hasAccessToken() {
+    final access = _storage.accessToken;
+    return access != null && access.isNotEmpty;
+  }
   void _handleIncomingRequest(dynamic data) async {
     if (data is! Map) return;
 
@@ -614,6 +635,5 @@ class CustomerRequestsController extends GetxController {
     return map;
   }
 }
-
 
 

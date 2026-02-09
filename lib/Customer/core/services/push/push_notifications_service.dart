@@ -22,15 +22,24 @@ class PushNotificationsService extends GetxService {
   Future<PushNotificationsService> init() async {
     if (_initialized) return this;
     try {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+      }
     } catch (e) {
       debugPrint('Firebase init failed (is google-services.json/plist added?): $e');
       return this;
     }
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     final messaging = FirebaseMessaging.instance;
+    try {
+      final supported = await messaging.isSupported();
+      if (!supported) {
+        _initialized = true;
+        return this;
+      }
+    } catch (_) {}
     try {
       await messaging.requestPermission();
     } catch (e) {
@@ -94,4 +103,3 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   } catch (_) {
   }
 }
-

@@ -13,6 +13,10 @@ import 'package:usta/Customer/core/realtime/realtime_controller.dart'
     as customer_rt;
 import 'package:usta/Customer/features/customer/chat/services/chat_realtime_service.dart'
     as customer_chat_rt;
+import 'package:usta/Customer/features/customer/chat/controller/chat_controller.dart'
+    as customer_chat;
+import 'package:usta/Customer/features/customer/customer_navigation_controller.dart'
+    as customer_nav;
 import 'package:usta/Customer/main.dart' as customer_app;
 
 enum AppUserType { none, artisan, customer }
@@ -194,6 +198,23 @@ class AppModeController extends GetxController {
           stackTrace: stack,
         );
       }
+    }
+    if (Get.isRegistered<customer_chat.ChatController>(tag: 'customer')) {
+      Get.delete<customer_chat.ChatController>(tag: 'customer', force: true);
+    }
+    if (Get.isRegistered<customer_chat_rt.ChatRealtimeService>(
+      tag: 'customer',
+    )) {
+      Get.delete<customer_chat_rt.ChatRealtimeService>(
+        tag: 'customer',
+        force: true,
+      );
+    }
+    if (Get.isRegistered<customer_rt.RealtimeController>(tag: 'customer')) {
+      Get.delete<customer_rt.RealtimeController>(tag: 'customer', force: true);
+    }
+    if (Get.isRegistered<customer_nav.CustomerNavigationController>()) {
+      Get.delete<customer_nav.CustomerNavigationController>(force: true);
     }
   }
 

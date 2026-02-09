@@ -1,10 +1,12 @@
 import 'package:get/get.dart';
 import 'package:usta/Customer/core/services/network/api_exception.dart';
+import 'package:usta/Customer/core/services/token_storage.dart';
 import 'package:usta/Customer/data/repositories/customer_repository.dart';
 import 'package:usta/Customer/features/auth/controllers/auth_controller.dart';
 
 class CustomerDashboardController extends GetxController {
   final CustomerRepository _repo = Get.find<CustomerRepository>();
+  final TokenStorage _storage = Get.find<TokenStorage>(tag: 'customer');
 
   final RxBool loadingDashboard = false.obs;
   final RxBool loadingStats = false.obs;
@@ -15,7 +17,9 @@ class CustomerDashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadAll();
+    if (_hasAccessToken()) {
+      loadAll();
+    }
   }
 
   Future<void> loadAll() async {
@@ -23,6 +27,10 @@ class CustomerDashboardController extends GetxController {
   }
 
   Future<void> fetchDashboard() async {
+    if (!_hasAccessToken()) {
+      loadingDashboard.value = false;
+      return;
+    }
     loadingDashboard.value = true;
     error.value = '';
     try {
@@ -38,6 +46,10 @@ class CustomerDashboardController extends GetxController {
   }
 
   Future<void> fetchStats() async {
+    if (!_hasAccessToken()) {
+      loadingStats.value = false;
+      return;
+    }
     loadingStats.value = true;
     error.value = '';
     try {
@@ -174,6 +186,11 @@ class CustomerDashboardController extends GetxController {
     }
   }
 
+  bool _hasAccessToken() {
+    final access = _storage.accessToken;
+    return access != null && access.isNotEmpty;
+  }
+
   List<String> get _defaultMonthLabels => const [
     'يناير',
     'فبراير',
@@ -189,5 +206,4 @@ class CustomerDashboardController extends GetxController {
     'ديسمبر',
   ];
 }
-
 

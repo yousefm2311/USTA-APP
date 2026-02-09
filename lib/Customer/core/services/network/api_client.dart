@@ -62,8 +62,8 @@ class ApiClient extends GetxService {
         PrettyDioLogger(
           requestHeader: false,
           responseHeader: false,
-          requestBody: true,
-          responseBody: true,
+          requestBody: false,
+          responseBody: false,
           compact: true,
         ),
       );

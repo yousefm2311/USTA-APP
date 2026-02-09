@@ -15,6 +15,7 @@ import 'package:usta/Customer/core/services/network/api_client.dart';
 import 'package:usta/Customer/core/services/network/api_exception.dart';
 import 'package:usta/Customer/core/realtime/realtime_controller.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:get_storage/get_storage.dart';
 
 class ChatController extends GetxController {
   final CustomerRepository _repo = Get.find<CustomerRepository>();
@@ -31,6 +32,7 @@ class ChatController extends GetxController {
   final RealtimeController _rtController = Get.find<RealtimeController>(
     tag: 'customer',
   );
+  final GetStorage _box = GetStorage();
   bool _didInit = false;
 
   final RxList<Map<String, dynamic>> chats = <Map<String, dynamic>>[].obs;
@@ -46,7 +48,9 @@ class ChatController extends GetxController {
   String? _customerId;
   int _inFlightSends = 0;
   int _localCounter = 0;
-  Timer? _chatsPollTimer;
+
+  static const String _hiddenChatsKey = 'customer_hidden_chats';
+  final Set<String> _hiddenChats = <String>{};
 
   String? get activeRequestId => _activeRequestId;
   String? get activeArtisanId => _activeArtisanId;
@@ -59,13 +63,17 @@ class ChatController extends GetxController {
     if (_didInit) return;
     _didInit = true;
     _uploadService ??= MediaUploadService(dio: _apiClient.dio);
+    _loadHiddenChats();
     _bootstrapUserId();
-    fetchChats();
+    if (_hasAccessToken()) {
+      fetchChats();
+    }
   }
 
   @override
   void onReady() {
     super.onReady();
+    if (!_hasAccessToken()) return;
     if (!_rtService.isStarted) {
       _rtService.start();
     }
@@ -74,12 +82,20 @@ class ChatController extends GetxController {
   void _bootstrapUserId() {
     final id = _ensureCustomerId();
     if (id != null && id.isNotEmpty) {
-      _rtService.subscribeToDirect(id);
       _rtController.joinCustomerRoom(id);
     }
   }
 
+  bool _hasAccessToken() {
+    final access = _tokenStorage.accessToken;
+    return access != null && access.isNotEmpty;
+  }
+
   Future<void> fetchChats() async {
+    if (!_hasAccessToken()) {
+      loadingChats.value = false;
+      return;
+    }
     loadingChats.value = true;
     try {
       final res = await _repo.api.listChats();
@@ -109,15 +125,21 @@ class ChatController extends GetxController {
         );
       }
       final merged = _mergeChatsWithLocal(combined);
-      chats.assignAll(merged);
-      for (final chat in combined) {
+      final visible = _filterHiddenChats(merged);
+      chats.assignAll(visible);
+      _sortChatsByLastMessage();
+      chats.refresh();
+      for (final chat in visible) {
         final type = chat['type']?.toString();
         if (type == 'request') {
           final rid = chat['requestId']?.toString() ?? '';
           if (rid.isNotEmpty) _rtService.subscribeToRequest(rid);
         } else if (type == 'direct') {
           final cid = chat['customerId']?.toString() ?? _customerId ?? '';
-          final aid = chat['artisanId']?.toString() ?? '';
+          final aid =
+              chat['artisanId']?.toString() ??
+              chat['otherId']?.toString() ??
+              '';
           if (cid.isNotEmpty && aid.isNotEmpty) {
             _rtService.subscribeToDirect(cid, artisanId: aid);
           }
@@ -125,11 +147,10 @@ class ChatController extends GetxController {
       }
       final selfId = _ensureCustomerId();
       if (selfId != null && selfId.isNotEmpty) {
-        _rtService.subscribeToDirect(selfId);
         _rtController.joinCustomerRoom(selfId);
       }
       if (!_rtService.isConnected) {
-        _rtController.reconnect();
+        _rtController.connectIfNeeded();
       }
       if (_customerId == null && combined.isNotEmpty) {
         _customerId = combined
@@ -140,6 +161,10 @@ class ChatController extends GetxController {
             );
       }
     } on ApiException catch (e) {
+      if (e.statusCode == 401 &&
+          Get.isRegistered<AuthController>(tag: 'customer')) {
+        Get.find<AuthController>(tag: 'customer').logout(remote: false);
+      }
       AppSnackBar.show('خطأ'.tr, e.message);
     } catch (e) {
       AppSnackBar.show('خطأ'.tr, 'تعذر جلب المحادثات'.tr);
@@ -196,6 +221,10 @@ class ChatController extends GetxController {
 
   Future<void> fetchMessages(String id, {bool direct = false}) async {
     if (id.isEmpty) return;
+    if (!_hasAccessToken()) {
+      loadingMessages.value = false;
+      return;
+    }
     _setActiveConversation(id, direct: direct);
     loadingMessages.value = true;
     isBlocked.value = false;
@@ -217,19 +246,28 @@ class ChatController extends GetxController {
               .where((e) => e.isNotEmpty)
               .toList(),
         );
+        _sortMessagesByTime();
       } else {
         messages.clear();
       }
       _resubscribeActive();
       _markUnreadAsRead(direct: direct);
+    } on ApiException catch (e) {
+      if (e.statusCode == 401 &&
+          Get.isRegistered<AuthController>(tag: 'customer')) {
+        Get.find<AuthController>(tag: 'customer').logout(remote: false);
+      }
+      AppSnackBar.show('خطأ'.tr, e.message);
+    } catch (_) {
+      AppSnackBar.show('خطأ'.tr, 'تعذر جلب الرسائل'.tr);
     } finally {
       loadingMessages.value = false;
     }
   }
 
   Map<String, dynamic> _normalizeChatItem(dynamic raw, {required String type}) {
-    if (raw is! Map<String, dynamic>) return {};
-    final m = Map<String, dynamic>.from(raw);
+    if (raw is! Map) return {};
+    final m = Map<String, dynamic>.from(raw as Map);
     final last =
         (m['lastMessage'] ??
             m['lastMessageText'] ??
@@ -248,11 +286,11 @@ class ChatController extends GetxController {
     final unread = m['unreadCount'] is num
         ? (m['unreadCount'] as num).toInt()
         : 0;
-    final customer = (m['customer'] is Map<String, dynamic>)
-        ? m['customer'] as Map<String, dynamic>
+    final customer = (m['customer'] is Map)
+        ? Map<String, dynamic>.from(m['customer'] as Map)
         : <String, dynamic>{};
-    final artisan = (m['artisan'] is Map<String, dynamic>)
-        ? m['artisan'] as Map<String, dynamic>
+    final artisan = (m['artisan'] is Map)
+        ? Map<String, dynamic>.from(m['artisan'] as Map)
         : <String, dynamic>{};
     final peerName = isAdminLast
         ? adminName
@@ -409,6 +447,26 @@ class ChatController extends GetxController {
     messages.clear();
   }
 
+  void resetForLogout() {
+    _activeRequestId = null;
+    _activeArtisanId = null;
+    _customerId = null;
+    loadingChats.value = false;
+    loadingMessages.value = false;
+    sending.value = false;
+    chats.clear();
+    messages.clear();
+    chats.refresh();
+    messages.refresh();
+  }
+
+  Future<void> onLogin() async {
+    _customerId = null;
+    _bootstrapUserId();
+    await _rtService.start(force: true);
+    await fetchChats();
+  }
+
   void setActiveConversation(String id, {required bool direct}) {
     if (direct) {
       _activeArtisanId = id;
@@ -422,6 +480,10 @@ class ChatController extends GetxController {
   void onSocketMessage(Map<String, dynamic> data) {
     final msg = _normalizeMessage(data);
     final requestId = msg['requestId']?.toString() ?? '';
+    final hiddenKey = _chatIdentity(
+      {'type': 'request', 'requestId': requestId},
+    );
+    if (_hiddenChats.contains(hiddenKey)) return;
     final isActive =
         _activeRequestId != null &&
         requestId.isNotEmpty &&
@@ -445,6 +507,15 @@ class ChatController extends GetxController {
         msg['otherId']?.toString() ??
         msg['senderId']?.toString() ??
         '';
+    final hiddenKey = _chatIdentity(
+      {
+        'type': 'direct',
+        'artisanId': artisanId,
+        'customerId': _customerId ?? msg['customerId']?.toString() ?? '',
+        'otherId': artisanId,
+      },
+    );
+    if (_hiddenChats.contains(hiddenKey)) return;
     final mine = _isMine(msg);
     final isActive =
         _activeArtisanId != null &&
@@ -494,6 +565,25 @@ class ChatController extends GetxController {
     _customerId ??= msg['customerId']?.toString();
     if (_customerId == null && sender == 'customer' && senderId != null) {
       _customerId = senderId;
+    }
+    if ((msg['customerId'] ?? '').toString().isEmpty && _customerId != null) {
+      msg['customerId'] = _customerId;
+    }
+    final otherId = msg['otherId']?.toString() ?? '';
+    if ((msg['artisanId'] ?? '').toString().isEmpty && otherId.isNotEmpty) {
+      msg['artisanId'] = otherId;
+    }
+    if ((msg['artisanId'] ?? '').toString().isEmpty &&
+        senderId != null &&
+        senderId.isNotEmpty &&
+        sender == 'artisan') {
+      msg['artisanId'] = senderId;
+    }
+    final receiverId = msg['receiverId']?.toString() ?? '';
+    if ((msg['artisanId'] ?? '').toString().isEmpty &&
+        receiverId.isNotEmpty &&
+        sender == 'customer') {
+      msg['artisanId'] = receiverId;
     }
     final mine =
         msg['isMine'] == true ||
@@ -682,6 +772,14 @@ class ChatController extends GetxController {
     final cid = msg['customerId']?.toString() ?? _customerId ?? '';
     final isAdmin = _isAdminMessage(msg);
     final peerName = _peerNameForMessage(msg, direct: direct);
+    final hiddenKey = _chatIdentity({
+      'type': direct ? 'direct' : 'request',
+      'requestId': requestId,
+      'artisanId': artisanId,
+      'customerId': cid,
+      'otherId': artisanId,
+    });
+    if (_hiddenChats.contains(hiddenKey)) return;
 
     final isActive = direct
         ? (_activeArtisanId != null &&
@@ -762,6 +860,7 @@ class ChatController extends GetxController {
         fetchChats();
       }
     }
+    _sortChatsByLastMessage();
     chats.refresh();
   }
 
@@ -1034,6 +1133,7 @@ class ChatController extends GetxController {
     } else {
       messages.add(msg);
     }
+    _sortMessagesByTime();
     messages.refresh();
     _updateChatsFromMessage(
       msg,
@@ -1262,20 +1362,124 @@ class ChatController extends GetxController {
     }
   }
 
-  void startChatsPolling({Duration interval = const Duration(seconds: 5)}) {
-    _chatsPollTimer?.cancel();
-    _chatsPollTimer = Timer.periodic(interval, (_) async {
-      if (chats.isNotEmpty) {
-        stopChatsPolling();
-        return;
+
+  void hideChat(Map<String, dynamic> chat) {
+    final key = _chatIdentity(chat);
+    if (key.isEmpty) return;
+    if (_hiddenChats.add(key)) {
+      _persistHiddenChats();
+    }
+    chats.removeWhere((c) => _chatIdentity(c) == key);
+    if (chat['type']?.toString() == 'direct') {
+      final artisanId =
+          chat['artisanId']?.toString() ?? chat['otherId']?.toString() ?? '';
+      if (artisanId.isNotEmpty) {
+        if (_activeArtisanId == artisanId) clearActive();
+        messages.removeWhere(
+          (m) =>
+              (m['artisanId']?.toString() == artisanId) &&
+              _isDirectMessage(m),
+        );
       }
-      await fetchChats();
+    } else {
+      final requestId =
+          chat['requestId']?.toString() ??
+          chat['request']?.toString() ??
+          chat['_id']?.toString() ??
+          chat['id']?.toString() ??
+          '';
+      if (requestId.isNotEmpty) {
+        if (_activeRequestId == requestId) clearActive();
+        messages.removeWhere(
+          (m) => (m['requestId']?.toString() == requestId),
+        );
+      }
+    }
+    messages.refresh();
+    chats.refresh();
+  }
+
+  List<Map<String, dynamic>> _filterHiddenChats(
+    List<Map<String, dynamic>> list,
+  ) {
+    if (_hiddenChats.isEmpty) return list;
+    return list.where((c) => !_hiddenChats.contains(_chatIdentity(c))).toList();
+  }
+
+  void _loadHiddenChats() {
+    final raw = _box.read<List<dynamic>>(_hiddenChatsKey) ?? const [];
+    _hiddenChats
+      ..clear()
+      ..addAll(raw.whereType<String>());
+  }
+
+  void _persistHiddenChats() {
+    _box.write(_hiddenChatsKey, _hiddenChats.toList());
+  }
+
+  String _chatIdentity(Map<String, dynamic> chat) {
+    final type = chat['type']?.toString() ?? '';
+    if (type == 'direct') {
+      final artisanId =
+          (chat['artisanId'] ?? chat['otherId'] ?? '').toString();
+      final customerId =
+          (chat['customerId'] ?? _customerId ?? '').toString();
+      if (artisanId.isNotEmpty && customerId.isNotEmpty) {
+        return 'direct:$customerId:$artisanId';
+      }
+      if (artisanId.isNotEmpty) return 'direct:unknown:$artisanId';
+      final chatId = (chat['chatId'] ?? chat['id'] ?? chat['_id']).toString();
+      if (chatId.isNotEmpty && chatId != 'null') return 'direct:chat:$chatId';
+      return 'direct:admin';
+    }
+    final requestId =
+        (chat['requestId'] ??
+                chat['request'] ??
+                chat['_id'] ??
+                chat['id'])
+            ?.toString() ??
+        '';
+    if (requestId.isNotEmpty) return 'request:$requestId';
+    final chatId = (chat['chatId'] ?? chat['id'] ?? chat['_id']).toString();
+    if (chatId.isNotEmpty && chatId != 'null') return 'request:chat:$chatId';
+    return 'request:admin';
+  }
+
+  void _sortChatsByLastMessage() {
+    if (chats.length < 2) return;
+    chats.sort((a, b) {
+      final ta = _parseChatTime(a);
+      final tb = _parseChatTime(b);
+      return tb.compareTo(ta);
     });
   }
 
-  void stopChatsPolling() {
-    _chatsPollTimer?.cancel();
-    _chatsPollTimer = null;
+  DateTime _parseChatTime(Map<String, dynamic> chat) {
+    final raw =
+        chat['lastMessageAt'] ?? chat['updatedAt'] ?? chat['createdAt'] ?? '';
+    return _parseDate(raw) ?? DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  void _sortMessagesByTime() {
+    if (messages.length < 2) return;
+    messages.sort((a, b) {
+      final ta = _parseMessageTime(a);
+      final tb = _parseMessageTime(b);
+      return ta.compareTo(tb);
+    });
+  }
+
+  DateTime _parseMessageTime(Map<String, dynamic> msg) {
+    final raw = msg['createdAt'] ?? msg['updatedAt'] ?? msg['sentAt'] ?? '';
+    return _parseDate(raw) ?? DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  DateTime? _parseDate(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is DateTime) return raw;
+    final text = raw.toString();
+    if (text.isEmpty || text == 'null') return null;
+    return DateTime.tryParse(text);
   }
 
   String? _ensureCustomerId() {
