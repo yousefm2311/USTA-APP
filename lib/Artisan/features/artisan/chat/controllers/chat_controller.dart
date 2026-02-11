@@ -3,9 +3,7 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
 import 'dart:math';
-
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
@@ -27,36 +25,26 @@ import 'package:usta/Artisan/features/artisan/chat/services/media_upload_service
 class ChatController extends GetxController {
   final ArtisanApi _api = ArtisanApi();
   final ChatRealtimeService _realtime = Get.find<ChatRealtimeService>(tag: 'artisan');
-
   RealtimeController? get _rt => Get.isRegistered<RealtimeController>(tag: 'artisan')
       ? Get.find<RealtimeController>(tag: 'artisan')
       : null;
-
   final AppPrefs _prefs = AppPrefs();
   final MediaUploadService _uploadService = MediaUploadService();
   late final Dio _downloadDio = _buildDownloadDio();
-
   final RxList<Map<String, dynamic>> chats = <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> messages = <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> directInbox = <Map<String, dynamic>>[].obs;
-
   final RxBool loadingChats = false.obs;
   final RxBool loadingMessages = false.obs;
   final RxBool loadingDirect = false.obs;
   final RxBool sending = false.obs;
   final RxBool blocked = false.obs;
-
   final Map<String, CancelToken> _uploadTokens = {};
   final Map<String, CancelToken> _downloadTokens = {};
   final Random _rand = Random();
-
-  // NOTE: We keep this flag because it is used elsewhere in your original logic,
-  // but we removed all "microtask/timer retries" that caused spam.
   bool _retryChatsScheduled = false;
-
   final RxBool isChatScreenOpen = false.obs;
   void setChatScreenOpen(bool open) => isChatScreenOpen.value = open;
-
   String? activeRequestId;
   String? activeCustomerId;
   String artisanId = '';
@@ -65,8 +53,6 @@ class ChatController extends GetxController {
   final Set<String> _localEchoIds = <String>{};
   StreamSubscription<bool>? _authSub;
   bool _bootstrapped = false;
-
-  // ---- Chats fetch guard/throttle (NO timers) ----
   final bool _fetchingChats = false;
   DateTime? _lastChatsFetchAt;
   static const Duration _chatsFetchCooldown = Duration(seconds: 1);

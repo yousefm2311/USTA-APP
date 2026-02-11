@@ -1,6 +1,4 @@
 import 'dart:async';
-
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:usta/Artisan/core/realtime/events.dart';
 import 'package:usta/Artisan/core/realtime/realtime_controller.dart';

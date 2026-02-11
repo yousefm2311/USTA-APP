@@ -64,7 +64,7 @@ class CustomerPaymentsHistoryView extends StatelessWidget {
     final amountRaw = _asNum(payment['amount']) ??
         _asNum(payment['total']) ??
         (credit - debit);
-    final amount = amountRaw ?? 0;
+    final amount = amountRaw;
     final currency = 'ج.م'.tr;
     final date = payment['createdAt']?.toString() ??
         payment['date']?.toString() ??

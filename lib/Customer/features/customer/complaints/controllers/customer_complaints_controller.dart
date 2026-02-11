@@ -65,6 +65,7 @@ class CustomerComplaintsController extends GetxController {
     } finally {
       loadingDetail.value = false;
     }
+    return null;
   }
 
   Future<bool> createComplaint({

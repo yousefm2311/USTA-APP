@@ -49,7 +49,7 @@ class CustomerWalletHistoryView extends StatelessWidget {
     final credit = _asNum(item['credit']) ?? 0;
     final debit = _asNum(item['debit']) ?? 0;
     final rawAmount = _asNum(item['amount']) ?? _asNum(item['value']) ?? (credit - debit);
-    final amount = rawAmount ?? 0;
+    final amount = rawAmount;
     final isIncome = amount >= 0;
     final title =
         item['title'] ??

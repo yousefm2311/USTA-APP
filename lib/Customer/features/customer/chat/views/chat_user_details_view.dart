@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:usta/Customer/core/utils/constants/api_endpoints.dart';
 import 'package:usta/Customer/core/config/app_config.dart';
 import 'package:usta/Customer/features/customer/chat/controller/chat_controller.dart';
 import 'package:usta/Customer/features/customer/chat/views/image_viewer_page.dart';

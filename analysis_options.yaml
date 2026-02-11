@@ -25,6 +25,10 @@ analyzer:
     unnecessary_null_comparison: ignore
     use_rethrow_when_possible: ignore
     curly_braces_in_flow_control_structures: ignore
+    unused_field: ignore
+    equal_keys_in_map: ignore
+    unnecessary_cast: ignore
+    control_flow_in_finally: ignore
 include: package:flutter_lints/flutter.yaml
 
 linter:

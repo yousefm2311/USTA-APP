@@ -7,8 +7,10 @@ import 'package:usta/Artisan/core/utils/constants/app_strings.dart';
 import 'package:usta/Artisan/core/utils/constants/app_text_style.dart';
 import 'package:usta/Artisan/core/utils/profile_completion_helper.dart';
 import 'package:usta/Artisan/core/utils/routes/routes.dart';
+import 'package:usta/Artisan/core/utils/widgets/icon_broken.dart';
 import 'package:usta/Artisan/core/utils/widgets/profile_completion_card.dart';
 import 'package:usta/Artisan/features/artisan/earnings/controllers/earnings_controller.dart';
+import 'package:usta/Artisan/features/artisan/notifications/views/artisan_notifications_view.dart';
 import 'package:usta/Artisan/features/artisan/profile/controllers/profile_controller.dart';
 import 'package:usta/Artisan/features/artisan/requests/controllers/artisan_requests_controller.dart';
 import 'package:usta/Artisan/features/artisan/wallet/controllers/wallet_controller.dart';
@@ -94,6 +96,11 @@ class _ArtisanHomeViewState extends State<ArtisanHomeView>
             fontSize: 20,
           ),
         ),
+        actions: [
+          IconButton(onPressed: () {
+            pushRoute(ArtisanNotificationsView());
+          }, icon: Icon(IconBroken.Notification)),
+        ],
       ),
       bottomSheet: Obx(() {
         final items = ProfileCompletionHelper.items();
@@ -697,10 +704,9 @@ class _ArtisanHomeViewState extends State<ArtisanHomeView>
                       textAlign: TextAlign.center,
                       maxLines: maxLines,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.body(context).copyWith(
-                        fontSize: fontSize,
-                        height: lineHeight,
-                      ),
+                      style: AppTextStyles.body(
+                        context,
+                      ).copyWith(fontSize: fontSize, height: lineHeight),
                     ),
                   ),
                 ],
