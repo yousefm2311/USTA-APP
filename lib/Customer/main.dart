@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:usta/app/app_mode_controller.dart';
+import 'package:usta/app/app_switcher.dart';
 import 'package:usta/Customer/core/config/app_config.dart';
 import 'package:usta/Customer/core/services/connectivity/connectivity_service.dart';
 import 'package:usta/Customer/core/services/device_id_service.dart';
@@ -87,8 +89,9 @@ Future<void> ensureCustomerInitialized() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ensureCustomerInitialized();
-  final startRoute = await resolveCustomerInitialRoute();
-  runApp(CustomerApp(initialRoute: startRoute));
+  final controller = Get.put(AppModeController(), permanent: true);
+  await controller.selectCustomer(force: true);
+  runApp(const AppSwitcher());
 }
 
 @pragma('vm:entry-point')

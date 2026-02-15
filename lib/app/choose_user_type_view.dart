@@ -3,88 +3,138 @@ import 'package:get/get.dart';
 import 'package:usta/app/app_mode_controller.dart';
 
 class ChooseUserTypeView extends StatefulWidget {
-  const ChooseUserTypeView({super.key});
+  const ChooseUserTypeView({super.key, this.fallbackMode});
+
+  final AppUserType? fallbackMode;
 
   @override
   State<ChooseUserTypeView> createState() => _ChooseUserTypeViewState();
 }
 
 class _ChooseUserTypeViewState extends State<ChooseUserTypeView> {
-  bool _allowTap = false;
+  AppModeController? _controller;
+  bool _switching = false;
 
   @override
   void initState() {
     super.initState();
-    // Prevent accidental carry-over tap from previous screen.
-    Future<void>.delayed(const Duration(milliseconds: 250), () {
-      if (mounted) {
-        setState(() {
-          _allowTap = true;
-        });
-      }
-    });
+    if (Get.isRegistered<AppModeController>()) {
+      _controller = AppModeController.to;
+    }
   }
 
   Color get blue => const Color(0xFF2563EB);
 
+  Future<void> _handleSelection(
+    BuildContext context,
+    AppUserType target,
+  ) async {
+    final controller = _controller;
+    if (controller == null) return;
+    if (_switching) return;
+    setState(() {
+      _switching = true;
+    });
+
+    if (target == AppUserType.artisan) {
+      await controller.selectArtisan(force: true);
+    } else if (target == AppUserType.customer) {
+      await controller.selectCustomer(force: true);
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _switching = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final isBootstrapping = Get.isRegistered<AppModeController>()
-          ? AppModeController.to.isBootstrapping.value
-          : false;
-      final canInteract = _allowTap && !isBootstrapping;
+    final controller = _controller;
+    if (controller == null) {
+      final canInteract = false;
+      return _buildContent(
+        context,
+        isBootstrapping: false,
+        canInteract: canInteract,
+      );
+    }
 
-      return Scaffold(
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 40),
-                const Text(
-                  'إختر نوع الحساب',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'تحديد نوع الحساب يساعدنا في تخصيص تجربة الاستخدام لك.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontFamily: 'Cairo', fontSize: 14),
-                ),
-                const SizedBox(height: 50),
-                _optionCard(
-                  context: context,
-                  title: 'حرفي',
-                  subtitle: 'لديك مهنة وتريد تقديم خدماتك للمستخدمين',
-                  icon: Icons.handyman,
-                  enabled: canInteract,
-                  onTap: () => AppModeController.to.selectArtisan(force: true),
-                ),
-                const SizedBox(height: 20),
-                _optionCard(
-                  context: context,
-                  title: 'مستخدم',
-                  subtitle: 'تبحث عن حرفي أو خدمة معينة',
-                  icon: Icons.person,
-                  enabled: canInteract,
-                  onTap: () => AppModeController.to.selectCustomer(force: true),
-                ),
-                if (isBootstrapping) ...[
-                  const SizedBox(height: 28),
-                  const CircularProgressIndicator(),
-                ],
-              ],
-            ),
-          ),
-        ),
+    return Obx(() {
+      final isBootstrapping = controller.isBootstrapping.value;
+      return _buildContent(
+        context,
+        isBootstrapping: isBootstrapping,
+        canInteract: !isBootstrapping && !_switching,
       );
     });
+  }
+
+  Widget _buildContent(
+    BuildContext context, {
+    required bool isBootstrapping,
+    required bool canInteract,
+  }) {
+
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 40),
+              const Text(
+                'اختر نوع الحساب',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'تحديد نوع الحساب يساعدنا في تخصيص تجربة الاستخدام لك.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: 'Cairo', fontSize: 14),
+              ),
+              const SizedBox(height: 50),
+
+              _optionCard(
+                context: context,
+                title: 'حرفي',
+                subtitle: 'لديك مهنة وتريد تقديم خدماتك للمستخدمين',
+                icon: Icons.handyman,
+                enabled: canInteract,
+                onTap: () => _handleSelection(
+                  context,
+                  AppUserType.artisan,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              _optionCard(
+                context: context,
+                title: 'مستخدم',
+                subtitle: 'تبحث عن حرفي أو خدمة معينة',
+                icon: Icons.person,
+                enabled: canInteract,
+                onTap: () => _handleSelection(
+                  context,
+                  AppUserType.customer,
+                ),
+              ),
+
+              if (isBootstrapping) ...[
+                const SizedBox(height: 28),
+                const CircularProgressIndicator(),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _optionCard({
@@ -93,7 +143,7 @@ class _ChooseUserTypeViewState extends State<ChooseUserTypeView> {
     required String subtitle,
     required IconData icon,
     required bool enabled,
-    required VoidCallback onTap,
+    required Future<void> Function() onTap,
   }) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.9, end: 1.0),
@@ -102,14 +152,17 @@ class _ChooseUserTypeViewState extends State<ChooseUserTypeView> {
       builder: (context, value, child) {
         return Transform.scale(scale: value, child: child);
       },
-      child: IgnorePointer(
-        ignoring: !enabled,
-        child: Opacity(
-          opacity: enabled ? 1 : 0.7,
+      child: Opacity(
+        opacity: enabled ? 1 : 0.7,
+        child: Material(
+          color: Colors.transparent,
           child: InkWell(
-            onTap: onTap,
+            onTap: () async {
+              if (!enabled) return;
+              await onTap();
+            },
             borderRadius: BorderRadius.circular(18),
-            child: Container(
+            child: Ink(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
               decoration: BoxDecoration(

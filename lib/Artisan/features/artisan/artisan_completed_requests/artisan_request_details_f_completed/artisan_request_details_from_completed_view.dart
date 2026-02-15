@@ -300,7 +300,7 @@ class _ArtisanRequestDetailsFromCompletedViewState
                                           : Colors.grey.shade400,
                                     ),
                                     padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
+                                      vertical: 16,
                                     ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(14),
@@ -344,6 +344,7 @@ class _ArtisanRequestDetailsFromCompletedViewState
                                       fontFamily: 'Cairo',
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
+
                                     ),
                                   ),
                                 ),

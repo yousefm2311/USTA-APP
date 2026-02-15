@@ -5,6 +5,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:usta/app/app_mode_controller.dart';
+import 'package:usta/app/app_switcher.dart';
 import 'package:usta/Artisan/core/services/fcm_service.dart';
 import 'package:usta/Artisan/core/realtime/realtime_lifecycle_service.dart';
 import 'package:usta/Artisan/core/services/auth_service.dart';
@@ -81,8 +83,9 @@ Future<void> ensureArtisanInitialized() async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ensureArtisanInitialized();
-  final startRoute = await resolveArtisanInitialRoute();
-  runApp(ArtisanApp(initialRoute: startRoute));
+  final controller = Get.put(AppModeController(), permanent: true);
+  await controller.selectArtisan(force: true);
+  runApp(const AppSwitcher());
 }
 
 Future initService() async {

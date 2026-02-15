@@ -1,5 +1,6 @@
 import 'dart:developer' as developer;
 
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:usta/Artisan/core/realtime/realtime_controller.dart'
@@ -11,10 +12,10 @@ import 'package:usta/Artisan/core/realtime/socket_service.dart'
 import 'package:usta/Artisan/main.dart' as artisan_app;
 import 'package:usta/Customer/core/realtime/realtime_controller.dart'
     as customer_rt;
-import 'package:usta/Customer/features/customer/chat/services/chat_realtime_service.dart'
-    as customer_chat_rt;
 import 'package:usta/Customer/features/customer/chat/controller/chat_controller.dart'
     as customer_chat;
+import 'package:usta/Customer/features/customer/chat/services/chat_realtime_service.dart'
+    as customer_chat_rt;
 import 'package:usta/Customer/features/customer/customer_navigation_controller.dart'
     as customer_nav;
 import 'package:usta/Customer/main.dart' as customer_app;
@@ -39,11 +40,14 @@ class AppModeController extends GetxController {
     await _ensurePrefs();
     final stored = _prefs?.getString(_storageKey);
     final parsed = _parse(stored);
+
+    // حضّر المود السابق لو موجود
     if (parsed == AppUserType.customer) {
       await _ensureCustomerReady();
     } else if (parsed == AppUserType.artisan) {
       await _ensureArtisanReady();
     }
+
     mode.value = parsed;
   }
 
@@ -56,14 +60,15 @@ class AppModeController extends GetxController {
   }
 
   Future<void> reset() async {
-    _switchToken++;
+    _switchToken++; // يلغي أي عمليات سويتش شغالة
     await _ensurePrefs();
     customerInitialRoute.value = null;
     artisanInitialRoute.value = null;
     mode.value = AppUserType.none;
     isBootstrapping.value = false;
     await _prefs?.remove(_storageKey);
-    // Cleanup is best-effort and must not block switching to chooser.
+
+    // Cleanup best-effort
     try {
       await _deactivateArtisanServices();
     } catch (error, stack) {
@@ -82,14 +87,8 @@ class AppModeController extends GetxController {
     }
   }
 
-  void attachSwitcher() {
-    _switcherAttached = true;
-  }
-
-  void detachSwitcher() {
-    _switcherAttached = false;
-  }
-
+  void attachSwitcher() => _switcherAttached = true;
+  void detachSwitcher() => _switcherAttached = false;
   bool get switcherAttached => _switcherAttached;
 
   Future<bool> resetToChooser() async {
@@ -98,12 +97,18 @@ class AppModeController extends GetxController {
   }
 
   Future<void> _switchTo(AppUserType next, {bool force = false}) async {
+    
     if (!force && mode.value == next && !isBootstrapping.value) return;
-    final token = ++_switchToken;
+
+    final int token = ++_switchToken;
+
+    // ابدأ bootstrap
     isBootstrapping.value = true;
-    mode.value = next;
     customerInitialRoute.value = null;
     artisanInitialRoute.value = null;
+
+    bool completed = false;
+
     try {
       if (next == AppUserType.artisan) {
         try {
@@ -114,9 +119,23 @@ class AppModeController extends GetxController {
             stackTrace: stack,
           );
         }
+
         await _ensureArtisanReady();
+
+        // لو اتلغى السويتش
         if (token != _switchToken) return;
+
         await _persistSelection('Artisan');
+
+        if (token != _switchToken) return;
+debugPrint('[AppMode] switch completed: $next');
+        debugPrint(
+          '[AppMode] artisanRoute=${artisanInitialRoute.value} customerRoute=${customerInitialRoute.value}',
+        );
+
+
+        mode.value = AppUserType.artisan;
+        completed = true;
       } else if (next == AppUserType.customer) {
         try {
           await _deactivateArtisanServices();
@@ -126,15 +145,33 @@ class AppModeController extends GetxController {
             stackTrace: stack,
           );
         }
+
         await _ensureCustomerReady();
+
         if (token != _switchToken) return;
+
         await _persistSelection('Customer');
+
+        if (token != _switchToken) return;
+debugPrint('[AppMode] switch completed: $next');
+        debugPrint(
+          '[AppMode] artisanRoute=${artisanInitialRoute.value} customerRoute=${customerInitialRoute.value}',
+        );
+
+        mode.value = AppUserType.customer;
+        completed = true;
       }
-      if (token != _switchToken) return;
-      mode.value = next;
     } finally {
+      // ✅ مهم جدًا: اقفل الـ bootstrapping حتى لو حصل cancel
+      // لو فيه سويتش أحدث شغال، سيبه هو يتحكم.
       if (token == _switchToken) {
         isBootstrapping.value = false;
+      } else {
+        // في حالة اتلغت العملية دي، ما تسيبش واجهة الاختيار مقفولة
+        // (ده بيحل “مش بيرضي يضغط”)
+        if (!completed) {
+          isBootstrapping.value = false;
+        }
       }
     }
   }
@@ -150,6 +187,7 @@ class AppModeController extends GetxController {
         );
       }
     }
+
     if (Get.isRegistered<artisan_rt.RealtimeController>(tag: 'artisan')) {
       try {
         await Get.find<artisan_rt.RealtimeController>(
@@ -162,6 +200,7 @@ class AppModeController extends GetxController {
         );
       }
     }
+
     if (Get.isRegistered<artisan_socket.SocketService>()) {
       try {
         await Get.find<artisan_socket.SocketService>().disconnect();
@@ -189,6 +228,7 @@ class AppModeController extends GetxController {
         );
       }
     }
+
     if (Get.isRegistered<customer_rt.RealtimeController>(tag: 'customer')) {
       try {
         Get.find<customer_rt.RealtimeController>(tag: 'customer').disconnect();
@@ -199,9 +239,12 @@ class AppModeController extends GetxController {
         );
       }
     }
+
+
     if (Get.isRegistered<customer_chat.ChatController>(tag: 'customer')) {
       Get.delete<customer_chat.ChatController>(tag: 'customer', force: true);
     }
+
     if (Get.isRegistered<customer_chat_rt.ChatRealtimeService>(
       tag: 'customer',
     )) {
@@ -210,9 +253,11 @@ class AppModeController extends GetxController {
         force: true,
       );
     }
+
     if (Get.isRegistered<customer_rt.RealtimeController>(tag: 'customer')) {
       Get.delete<customer_rt.RealtimeController>(tag: 'customer', force: true);
     }
+
     if (Get.isRegistered<customer_nav.CustomerNavigationController>()) {
       Get.delete<customer_nav.CustomerNavigationController>(force: true);
     }
