@@ -411,11 +411,12 @@ class AuthController extends GetxController {
 
   Future<void> logout({bool remote = true}) async {
     _resetCustomerHomeTab();
-    await _storage.clear();
     if (remote) {
       try {
         await _repo.logout();
       } catch (_) {}
+    } else {
+      await _storage.clear();
     }
 
     profile.value = null;

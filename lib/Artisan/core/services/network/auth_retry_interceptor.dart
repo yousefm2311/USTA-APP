@@ -79,6 +79,9 @@ class AuthRetryInterceptor extends Interceptor {
         }
       }
       _pending.clear();
+      if (!authService.logoutRequiredAfterRefreshFailure) {
+        return handler.next(err);
+      }
       await authService.handleUnauthorized(
         skipRefresh: true,
         forceLogout: true,
@@ -100,7 +103,9 @@ class AuthRetryInterceptor extends Interceptor {
       final retryResp = await _retry(request);
       return handler.resolve(retryResp);
     } catch (e) {
-      if (e is DioException && e.response?.statusCode == 401) {
+      if (e is DioException &&
+          e.response?.statusCode == 401 &&
+          authService.logoutRequiredAfterRefreshFailure) {
         await authService.handleUnauthorized(
           skipRefresh: true,
           forceLogout: true,
@@ -140,4 +145,3 @@ class AuthRetryInterceptor extends Interceptor {
     );
   }
 }
-

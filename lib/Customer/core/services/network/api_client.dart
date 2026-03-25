@@ -22,7 +22,10 @@ class ApiClient extends GetxService {
   final TokenStorage _storage = Get.find<TokenStorage>(tag: 'customer');
 
   bool _isRefreshing = false;
-  Completer<bool>? _refreshCompleter;
+  Completer<_RefreshResult>? _refreshCompleter;
+
+  static const _retryFlag = '__retried';
+  static const _skipAuthFailureFlag = '__skip_auth_failure';
 
   Dio get dio => _dio;
 
@@ -82,12 +85,15 @@ class ApiClient extends GetxService {
       onError: (error, handler) async {
         final status = error.response?.statusCode ?? 0;
         if (_shouldRefresh(status, error.requestOptions)) {
-          final refreshed = await _tryRefreshToken();
-          if (refreshed) {
+          final refreshResult = await _tryRefreshToken();
+          if (refreshResult == _RefreshResult.success) {
             try {
               final cloned = await _retry(error.requestOptions);
               return handler.resolve(cloned);
             } catch (_) {}
+          }
+          if (refreshResult == _RefreshResult.deferred) {
+            error.requestOptions.extra[_skipAuthFailureFlag] = true;
           }
         }
         return handler.next(error);
@@ -104,8 +110,6 @@ class ApiClient extends GetxService {
     if (refreshToken == null || refreshToken.isEmpty) return false;
     return true;
   }
-
-  static const _retryFlag = '__retried';
 
   Future<Response<dynamic>> _retry(RequestOptions requestOptions) {
     final options = Options(
@@ -134,20 +138,20 @@ class ApiClient extends GetxService {
     );
   }
 
-  Future<bool> _tryRefreshToken() async {
+  Future<_RefreshResult> _tryRefreshToken() async {
     final refreshToken = _storage.refreshToken;
     if (refreshToken == null || refreshToken.isEmpty) {
       await _storage.clear();
       _handleSessionExpired('انتهت صلاحية الجلسة، رجاء سجّل الدخول من جديد'.tr);
-      return false;
+      return _RefreshResult.failed;
     }
 
     if (_isRefreshing) {
-      return _refreshCompleter?.future ?? Future.value(false);
+      return _refreshCompleter?.future ?? Future.value(_RefreshResult.failed);
     }
 
     _isRefreshing = true;
-    _refreshCompleter = Completer<bool>();
+    _refreshCompleter = Completer<_RefreshResult>();
 
     try {
       final config = AppConfig.instance;
@@ -185,20 +189,39 @@ class ApiClient extends GetxService {
           if (Get.isRegistered<RealtimeController>(tag: 'customer')) {
             Get.find<RealtimeController>(tag: 'customer').setAuthToken(access);
           }
-          _refreshCompleter?.complete(true);
-          return true;
+          _refreshCompleter?.complete(_RefreshResult.success);
+          return _RefreshResult.success;
         }
       }
 
       await _storage.clear();
-      _refreshCompleter?.complete(false);
+      _refreshCompleter?.complete(_RefreshResult.failed);
       _handleSessionExpired('تم تسجيل الخروج، الرجاء الدخول مرة أخرى'.tr);
-      return false;
+      return _RefreshResult.failed;
+    } on DioException catch (error) {
+      final status = error.response?.statusCode;
+      final isNetworkTimeout =
+          error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.sendTimeout;
+      final isNetworkIssue =
+          isNetworkTimeout ||
+          error.type == DioExceptionType.connectionError ||
+          error.type == DioExceptionType.unknown;
+      if (isNetworkIssue && status == null) {
+        _markOffline();
+        _refreshCompleter?.complete(_RefreshResult.deferred);
+        return _RefreshResult.deferred;
+      }
+      await _storage.clear();
+      _refreshCompleter?.complete(_RefreshResult.failed);
+      _handleSessionExpired('تعذر تجديد الجلسة، يرجى إعادة تسجيل الدخول'.tr);
+      return _RefreshResult.failed;
     } catch (_) {
       await _storage.clear();
-      _refreshCompleter?.complete(false);
+      _refreshCompleter?.complete(_RefreshResult.failed);
       _handleSessionExpired('تعذر تجديد الجلسة، يرجى إعادة تسجيل الدخول'.tr);
-      return false;
+      return _RefreshResult.failed;
     } finally {
       _isRefreshing = false;
     }
@@ -591,6 +614,7 @@ class ApiClient extends GetxService {
     final status = error.statusCode;
     if (status != 401 && status != 403) return false;
     if (request != null && _isPublicAuthEndpoint(request)) return false;
+    if (request?.extra[_skipAuthFailureFlag] == true) return false;
     if (!_isCustomerModeActive()) return false;
     if (!_hasAnySessionToken()) return false;
     if (_handlingAuthFailure) return true;
@@ -648,3 +672,5 @@ class ApiClient extends GetxService {
     return path.contains('/customer/refresh-token');
   }
 }
+
+enum _RefreshResult { success, failed, deferred }

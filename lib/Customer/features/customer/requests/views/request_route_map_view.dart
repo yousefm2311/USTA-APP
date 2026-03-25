@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+
 class RequestRouteMapView extends StatefulWidget {
   const RequestRouteMapView({
     super.key,
@@ -61,8 +62,7 @@ class _RequestRouteMapViewState extends State<RequestRouteMapView> {
           final pos = await Geolocator.getCurrentPosition();
           user = LatLng(pos.latitude, pos.longitude);
         }
-      } catch (_) {
-      }
+      } catch (_) {}
     }
 
     if (user != null) {
@@ -97,10 +97,8 @@ class _RequestRouteMapViewState extends State<RequestRouteMapView> {
           final pts = coords
               .where((c) => c is List && c.length >= 2)
               .map<LatLng>(
-                (c) => LatLng(
-                  (c[1] as num).toDouble(),
-                  (c[0] as num).toDouble(),
-                ),
+                (c) =>
+                    LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble()),
               )
               .toList();
           if (pts.length >= 2) {
@@ -114,8 +112,7 @@ class _RequestRouteMapViewState extends State<RequestRouteMapView> {
           }
         }
       }
-    } catch (_) {
-    }
+    } catch (_) {}
 
     if (mounted) {
       setState(() {
@@ -135,9 +132,7 @@ class _RequestRouteMapViewState extends State<RequestRouteMapView> {
       return;
     }
     final bounds = _expandBounds(_computeBounds(_route));
-    _mapController!.animateCamera(
-      CameraUpdate.newLatLngBounds(bounds, 80),
-    );
+    _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 80));
   }
 
   @override
@@ -159,7 +154,9 @@ class _RequestRouteMapViewState extends State<RequestRouteMapView> {
           markerId: const MarkerId('user'),
           position: _user!,
           infoWindow: InfoWindow(title: 'موقعي'.tr),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueGreen,
+          ),
         ),
       );
     }
@@ -233,29 +230,8 @@ class _RequestRouteMapViewState extends State<RequestRouteMapView> {
   }
 
   LatLng _resolveArtisan() {
-    double? lat = widget.artisanLat;
-    double? lng = widget.artisanLng;
-    final loc = widget.artisanLocation;
-    if (loc != null) {
-      final m = Map<String, dynamic>.from(loc as Map);
-      lat ??= _extractCoord(m, ['lat', 'latitude']);
-      lng ??= _extractCoord(m, ['lng', 'longitude']);
-      final coords = m['coordinates'];
-      if (lat == null &&
-          lng == null &&
-          coords is List &&
-          coords.length >= 2 &&
-          coords[0] is num &&
-          coords[1] is num) {
-        lat = (coords[1] as num).toDouble();
-        lng = (coords[0] as num).toDouble();
-      }
-    }
-
-    lat ??= widget.artisanLat;
-    lng ??= widget.artisanLng;
-    lat ??= 30.0507;
-    lng ??= 31.2489;
+    final lat = widget.artisanLat;
+    final lng = widget.artisanLng;
     return LatLng(lat, lng);
   }
 
@@ -273,17 +249,21 @@ class _RequestRouteMapViewState extends State<RequestRouteMapView> {
 
   LatLngBounds _expandBounds(LatLngBounds bounds) {
     const double minDelta = 0.002;
-    final latSpan =
-        (bounds.northeast.latitude - bounds.southwest.latitude).abs();
-    final lngSpan =
-        (bounds.northeast.longitude - bounds.southwest.longitude).abs();
+    final latSpan = (bounds.northeast.latitude - bounds.southwest.latitude)
+        .abs();
+    final lngSpan = (bounds.northeast.longitude - bounds.southwest.longitude)
+        .abs();
     final expandLat = latSpan < minDelta ? minDelta : latSpan * 0.15;
     final expandLng = lngSpan < minDelta ? minDelta : lngSpan * 0.15;
     return LatLngBounds(
-      southwest: LatLng(bounds.southwest.latitude - expandLat,
-          bounds.southwest.longitude - expandLng),
-      northeast: LatLng(bounds.northeast.latitude + expandLat,
-          bounds.northeast.longitude + expandLng),
+      southwest: LatLng(
+        bounds.southwest.latitude - expandLat,
+        bounds.southwest.longitude - expandLng,
+      ),
+      northeast: LatLng(
+        bounds.northeast.latitude + expandLat,
+        bounds.northeast.longitude + expandLng,
+      ),
     );
   }
 }

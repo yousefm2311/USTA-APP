@@ -322,6 +322,8 @@ class AuthService extends GetxService {
   String? get accessToken => _accessToken.value ?? _storage.accessToken;
   String? get refreshToken => _storage.refreshToken;
   bool get isAuthenticated => _authenticated.value;
+  bool get logoutRequiredAfterRefreshFailure =>
+      _shouldLogoutAfterRefreshFailure;
   Stream<bool> get authenticatedStream => _authenticated.stream;
 
   bool _isArtisanModeActive() {
