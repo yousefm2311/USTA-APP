@@ -23,6 +23,16 @@ This final audit layer focused on production exposure risks and UX edge cases th
 - polished timeout, offline, session-expiry, back-navigation, and image-preview behavior in the Flutter app
 - tightened admin review UX with action loading state and safer verification image rendering
 
+## Ultra Final Optimization Pass
+
+This final optimization layer focused on scale-readiness without changing any flows:
+
+- reduced unnecessary client-side recompression work for images that are already within safe upload size bounds
+- added optimistic KYC state guards to reduce stale overwrites and duplicate-request races
+- added a lightweight verification-status index for review queue and status-filter queries
+- enriched KYC activity logs and emitted events with request and timing metadata for monitoring systems
+- surfaced lightweight fraud-style operational signals such as repeated failures and frequent re-uploads through logs and events, without changing approval behavior
+
 ## Backend
 
 ### What changed
@@ -62,6 +72,13 @@ This final audit layer focused on production exposure risks and UX edge cases th
   - admin endpoints avoid leaking raw storage paths and unnecessary private fields
 - Sanitized KYC error `details` payloads before returning them to clients.
 - Redacted sensitive values from activity log metadata before writing audit records.
+- Added request-level observability metadata to activity logs:
+  - `requestId`
+  - `method`
+  - `path`
+  - `ipAddress`
+  - `userAgent`
+  - `loggedAt`
 - Switched private upload writes to temp-file-plus-rename semantics to reduce partial-file and overwrite edge cases.
 - Enriched KYC event payloads with:
   - `event`
@@ -70,6 +87,8 @@ This final audit layer focused on production exposure risks and UX edge cases th
   - `previousStatus`
   - `nextStatus`
   - `source`
+- Added optimistic status checks to verification updates so duplicate or stale approve/reject/upload operations fail safely instead of overwriting newer state.
+- Added a verification-status index to support review queue filtering at larger data volumes.
 
 ### Files changed
 
@@ -119,6 +138,7 @@ This final audit layer focused on production exposure risks and UX edge cases th
   - camera permission failures
 - Prevented back-button stack bypass from KYC screens by re-running the existing guard instead of allowing raw pop navigation.
 - Added safer image preview fallback when temporary local image files are no longer available after app lifecycle interruptions.
+- Tuned image optimization so already-small images skip a second compression pass, reducing CPU work and upload latency while preserving card readability.
 - Preserved the existing KYC screens and routing logic, but made the UI behavior more consistent with the backend response contract.
 
 ### Files changed

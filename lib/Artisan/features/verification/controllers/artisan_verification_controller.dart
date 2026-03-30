@@ -16,6 +16,9 @@ import 'package:usta/Artisan/core/utils/widgets/app_snackbar.dart';
 import 'package:usta/Artisan/data/providers/artisan_api.dart';
 
 class ArtisanVerificationController extends GetxController {
+  static const int _idCompressionSkipThresholdBytes = 2 * 1024 * 1024;
+  static const int _selfieCompressionSkipThresholdBytes = 1400 * 1024;
+
   ArtisanVerificationController({
     ArtisanApi? api,
     ImagePicker? picker,
@@ -119,16 +122,18 @@ class ArtisanVerificationController extends GetxController {
       final compressedFront = await _optimizeImage(
         front,
         suffix: 'id-front',
-        quality: 90,
+        quality: 92,
         minWidth: 1800,
         minHeight: 1100,
+        skipCompressionBelowBytes: _idCompressionSkipThresholdBytes,
       );
       final compressedBack = await _optimizeImage(
         back,
         suffix: 'id-back',
-        quality: 90,
+        quality: 92,
         minWidth: 1800,
         minHeight: 1100,
+        skipCompressionBelowBytes: _idCompressionSkipThresholdBytes,
       );
       final response = await _api.uploadVerificationId(
         idFront: compressedFront,
@@ -160,9 +165,10 @@ class ArtisanVerificationController extends GetxController {
       final compressedSelfie = await _optimizeImage(
         currentSelfie,
         suffix: 'selfie',
-        quality: 86,
+        quality: 88,
         minWidth: 1280,
         minHeight: 1280,
+        skipCompressionBelowBytes: _selfieCompressionSkipThresholdBytes,
       );
       final response = await _api.uploadVerificationSelfie(
         selfie: compressedSelfie,
@@ -345,9 +351,14 @@ class ArtisanVerificationController extends GetxController {
     required int quality,
     required int minWidth,
     required int minHeight,
+    required int skipCompressionBelowBytes,
   }) async {
     final originalFile = File(source.path);
     final originalPath = originalFile.path;
+    final originalBytes = await originalFile.length();
+    if (originalBytes > 0 && originalBytes <= skipCompressionBelowBytes) {
+      return source;
+    }
     final extension = originalPath.toLowerCase().endsWith('.png') ? '.png' : '.jpg';
     final targetPath = originalPath.replaceFirst(
       RegExp(r'(\.[a-zA-Z0-9]+)?$'),
