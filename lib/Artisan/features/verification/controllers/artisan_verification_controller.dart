@@ -48,10 +48,16 @@ class ArtisanVerificationController extends GetxController {
   String? get failureReason =>
       verification['rejectionReasonUserSafe']?.toString() ??
       verification['failureReason']?.toString();
+  String? get rejectionCategory =>
+      verification['rejectionCategory']?.toString();
   String get retryAction =>
       (verification['retryAction'] ?? 'both').toString();
   String get problemType =>
       (verification['problemType'] ?? 'unknown').toString();
+  String? get blockedReasonCode =>
+      verification['blockedReasonCode']?.toString();
+  String? get availableRetryAt =>
+      verification['availableRetryAt']?.toString();
   bool get isCooldownActive => cooldownRemaining > 0;
 
   @override
@@ -275,22 +281,29 @@ class ArtisanVerificationController extends GetxController {
   Map<String, dynamic>? _verificationFromProfile(Map<String, dynamic>? artisan) {
     if (artisan == null) return null;
     final attempts = (artisan['verificationAttempts'] as num?)?.toInt() ?? 0;
+    final maxAttempts = (artisan['maxAttempts'] as num?)?.toInt() ?? 3;
+    final category = artisan['rejectionCategory']?.toString();
     return {
       'identityVerified': artisan['identityVerified'] ?? false,
       'isVerified': artisan['identityVerified'] ?? false,
       'verificationStatus': artisan['verificationStatus'] ?? 'pending_documents',
       'attempts': attempts,
+      'maxAttempts': maxAttempts,
       'failureReason': artisan['verificationFailureReason'],
-      'rejectionReasonUserSafe': artisan['rejectionReasonUserSafe'],
+      'rejectionReasonUserSafe':
+          artisan['rejectionReasonUserSafe'] ?? _messageForCategory(category),
       'rejectionReasonInternal': artisan['rejectionReasonInternal'],
+      'rejectionCategory': category,
       'confidence': artisan['verificationConfidence'],
       'hasIdImages': artisan['idFrontImage'] != null && artisan['idBackImage'] != null,
       'hasSelfieImage': artisan['selfieImage'] != null,
-      'canRetry': attempts < 3,
-      'attemptsRemaining': attempts >= 3 ? 0 : 3 - attempts,
+      'canRetry': attempts < maxAttempts,
+      'attemptsRemaining': attempts >= maxAttempts ? 0 : maxAttempts - attempts,
       'cooldownRemaining': 0,
+      'availableRetryAt': artisan['availableRetryAt'],
       'retryAction': artisan['retryAction'] ?? 'both',
       'problemType': artisan['problemType'] ?? 'unknown',
+      'blockedReasonCode': artisan['blockedReasonCode'],
     };
   }
 
@@ -340,11 +353,91 @@ class ArtisanVerificationController extends GetxController {
     return compressed ?? source;
   }
 
+  void _applyErrorState(ApiException error) {
+    final details = error.details;
+    if (details == null || details.isEmpty) return;
+    verification.addAll({
+      if (details['verificationStatus'] != null)
+        'verificationStatus': details['verificationStatus'],
+      if (details['attemptsRemaining'] != null)
+        'attemptsRemaining': details['attemptsRemaining'],
+      if (details['maxAttempts'] != null) 'maxAttempts': details['maxAttempts'],
+      if (details['cooldownRemaining'] != null)
+        'cooldownRemaining': details['cooldownRemaining'],
+      if (details['availableRetryAt'] != null)
+        'availableRetryAt': details['availableRetryAt'],
+      if (details['retryAction'] != null) 'retryAction': details['retryAction'],
+      if (details['problemType'] != null) 'problemType': details['problemType'],
+      if (details['rejectionCategory'] != null)
+        'rejectionCategory': details['rejectionCategory'],
+      if (details['rejectionReasonUserSafe'] != null)
+        'rejectionReasonUserSafe': details['rejectionReasonUserSafe'],
+      if (details['failureReason'] != null)
+        'failureReason': details['failureReason'],
+      if (details['blockedReasonCode'] != null)
+        'blockedReasonCode': details['blockedReasonCode'],
+      'canRetry': details['canRetry'] ?? verification['canRetry'],
+    });
+  }
+
+  String? _messageForCategory(String? category) {
+    switch (category) {
+      case 'id_blurry':
+        return 'صور البطاقة غير واضحة. أعد رفع البطاقة بصورة أوضح.';
+      case 'id_invalid':
+        return 'تعذر التحقق من البطاقة. تأكد من أن البطاقة صحيحة وكاملة.';
+      case 'face_mismatch':
+        return 'صورة الوجه لا تطابق بيانات الهوية بشكل كافٍ.';
+      case 'face_not_clear':
+        return 'صورة السيلفي غير واضحة. التقط سيلفي أوضح.';
+      case 'fraud_suspected':
+        return 'تعذر إكمال التحقق الآن. إذا استمرت المشكلة تواصل مع الدعم.';
+      default:
+        return null;
+    }
+  }
+
+  String rejectionCategoryLabel() {
+    switch (rejectionCategory) {
+      case 'id_blurry':
+        return AppStrings.kycCategoryIdBlurry.tr;
+      case 'id_invalid':
+        return AppStrings.kycCategoryIdInvalid.tr;
+      case 'face_mismatch':
+        return AppStrings.kycCategoryFaceMismatch.tr;
+      case 'face_not_clear':
+        return AppStrings.kycCategoryFaceNotClear.tr;
+      case 'fraud_suspected':
+        return AppStrings.kycCategoryFraudSuspected.tr;
+      default:
+        return '';
+    }
+  }
+
+  String retryAvailabilityLabel() {
+    final raw = availableRetryAt;
+    if (raw == null || raw.isEmpty) return '';
+    final parsed = DateTime.tryParse(raw)?.toLocal();
+    if (parsed == null) return '';
+    final hh = parsed.hour.toString().padLeft(2, '0');
+    final mm = parsed.minute.toString().padLeft(2, '0');
+    return '$hh:$mm';
+  }
+
   String _mapApiError(ApiException error) {
+    _applyErrorState(error);
     final statusCode = error.statusCode;
     final message = error.message.trim();
     if (statusCode == 403) {
       return AppStrings.kycAccessBlocked.tr;
+    }
+    if (statusCode == 409 && error.code == 'kyc_already_approved') {
+      return AppStrings.kycAlreadyApproved.tr;
+    }
+    if (statusCode == 409) {
+      return message.isNotEmpty
+          ? message
+          : AppStrings.couldNotCompleteRequest.tr;
     }
     if (statusCode == 429) {
       return message.isNotEmpty

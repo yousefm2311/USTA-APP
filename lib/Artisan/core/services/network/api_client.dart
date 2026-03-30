@@ -215,8 +215,15 @@ import 'package:usta/Artisan/core/services/network/auth_retry_interceptor.dart';
 class ApiException implements Exception {
   final String message;
   final int? statusCode;
+  final String? code;
+  final Map<String, dynamic>? details;
 
-  ApiException(this.message, {this.statusCode});
+  ApiException(
+    this.message, {
+    this.statusCode,
+    this.code,
+    this.details,
+  });
 
   @override
   String toString() => message;
@@ -354,21 +361,37 @@ class ApiClient extends GetxService {
       );
       return response.data ?? {};
     } on DioException catch (error) {
-      final message = _formatError(error);
-      throw ApiException(message, statusCode: error.response?.statusCode);
+      final payload = _extractErrorPayload(error);
+      throw ApiException(
+        payload.message,
+        statusCode: error.response?.statusCode,
+        code: payload.code,
+        details: payload.details,
+      );
     } catch (_) {
       throw ApiException('Unexpected error, please try again.');
     }
   }
 
   /// ⭐ نفس formatter اللي عندك
-  String _formatError(DioException error) {
+  ({String message, String? code, Map<String, dynamic>? details}) _extractErrorPayload(
+    DioException error,
+  ) {
     final response = error.response;
     String? extracted;
+    String? code;
+    Map<String, dynamic>? details;
 
     if (response?.data is Map<String, dynamic>) {
       final data = response!.data as Map<String, dynamic>;
       extracted = (data['message'] ?? data['error'] ?? data['msg'])?.toString();
+      code = data['code']?.toString();
+      final rawDetails = data['details'];
+      if (rawDetails is Map<String, dynamic>) {
+        details = rawDetails;
+      } else if (rawDetails is Map) {
+        details = rawDetails.cast<String, dynamic>();
+      }
     } else if (response?.data is String) {
       extracted = response!.data.toString();
     }
@@ -378,13 +401,19 @@ class ApiClient extends GetxService {
     if (extracted == null ||
         extracted.trim().isEmpty ||
         extracted.toLowerCase().contains('message not found')) {
-      final code = response?.statusCode;
+      final statusCode = response?.statusCode;
       extracted = code != null
           ? 'Request failed ($code)'
-          : 'Unexpected error, please try again.';
+          : statusCode != null
+              ? 'Request failed ($statusCode)'
+              : 'Unexpected error, please try again.';
     }
 
-    return extracted;
+    return (
+      message: extracted,
+      code: code,
+      details: details,
+    );
   }
 
   /// compatibility

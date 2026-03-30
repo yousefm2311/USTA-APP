@@ -34,6 +34,19 @@ class ArtisanIdUploadView extends GetView<ArtisanVerificationController> {
                       : AppStrings.kycAttemptsLimitReached.tr,
                 ),
               ),
+              if (controller.isCooldownActive &&
+                  controller.retryAvailabilityLabel().isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      AppStrings.kycRetryAvailableAt.trParams({
+                        'time': controller.retryAvailabilityLabel(),
+                      }),
+                    ),
+                  ),
+                ),
             ],
             VerificationImageCard(
               title: AppStrings.kycIdFrontLabel.tr,

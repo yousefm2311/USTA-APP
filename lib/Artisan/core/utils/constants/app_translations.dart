@@ -196,12 +196,21 @@ class AppTranslations extends Translations {
           'وصلت للحد الأقصى من محاولات التحقق. تواصل مع الدعم.',
       AppStrings.kycRetryCooldown:
           'يمكنك إعادة المحاولة بعد @seconds ثانية.',
+      AppStrings.kycRetryAvailableAt:
+          'يمكنك إعادة المحاولة عند @time.',
       AppStrings.kycAccessBlocked:
           'لازم تكمل توثيق الهوية أولًا قبل استخدام هذه الخاصية.',
       AppStrings.kycValidationError:
           'الملفات المرفوعة غير صالحة. تأكد من نوع الصورة وحجمها.',
       AppStrings.kycSelfieSubmittedBody:
           'تم رفع السيلفي بنجاح. انتظر لحظة بينما نراجع التطابق.',
+      AppStrings.kycAlreadyApproved:
+          'تم اعتماد هويتك بالفعل ويمكنك متابعة استخدام التطبيق.',
+      AppStrings.kycCategoryIdBlurry: 'صورة البطاقة غير واضحة',
+      AppStrings.kycCategoryIdInvalid: 'البطاقة غير صالحة أو غير مكتملة',
+      AppStrings.kycCategoryFaceMismatch: 'الوجه لا يطابق بيانات الهوية',
+      AppStrings.kycCategoryFaceNotClear: 'صورة السيلفي غير واضحة',
+      AppStrings.kycCategoryFraudSuspected: 'الحالة تحتاج مراجعة أمنية',
       AppStrings.artisanHomeTitle: 'لوحة الحرفي',
       AppStrings.quickStats: 'الإحصائيات السريعة',
       AppStrings.statNew: 'طلبات جديدة',
@@ -668,12 +677,21 @@ class AppTranslations extends Translations {
           'You have reached the maximum verification attempts.',
       AppStrings.kycRetryCooldown:
           'You can retry again in @seconds seconds.',
+      AppStrings.kycRetryAvailableAt:
+          'You can try again at @time.',
       AppStrings.kycAccessBlocked:
           'Complete identity verification before using this feature.',
       AppStrings.kycValidationError:
           'The uploaded files are invalid. Please check the image type and size.',
       AppStrings.kycSelfieSubmittedBody:
           'Your selfie was uploaded successfully. We are checking the match now.',
+      AppStrings.kycAlreadyApproved:
+          'Your identity is already approved and the app is unlocked.',
+      AppStrings.kycCategoryIdBlurry: 'ID image is blurry',
+      AppStrings.kycCategoryIdInvalid: 'ID is invalid or incomplete',
+      AppStrings.kycCategoryFaceMismatch: 'Face does not match the ID',
+      AppStrings.kycCategoryFaceNotClear: 'Selfie is not clear',
+      AppStrings.kycCategoryFraudSuspected: 'Case needs security review',
       AppStrings.artisanHomeTitle: 'Artisan Dashboard',
       AppStrings.quickStats: 'Quick stats',
       AppStrings.statNew: 'New requests',

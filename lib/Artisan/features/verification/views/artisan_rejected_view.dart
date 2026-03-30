@@ -20,6 +20,7 @@ class ArtisanVerificationRejectedView
         final retryAction = controller.retryAction;
         final problemType = controller.problemType;
         final reason = controller.failureReason ?? AppStrings.kycVerificationFailed.tr;
+        final categoryLabel = controller.rejectionCategoryLabel();
 
         String issueLabel;
         switch (problemType) {
@@ -91,7 +92,7 @@ class ArtisanVerificationRejectedView
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      issueLabel,
+                      categoryLabel.isNotEmpty ? categoryLabel : issueLabel,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),
@@ -109,6 +110,19 @@ class ArtisanVerificationRejectedView
                             fontWeight: FontWeight.w700,
                           ),
                     ),
+                    if (controller.isCooldownActive &&
+                        controller.retryAvailabilityLabel().isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        AppStrings.kycRetryAvailableAt.trParams({
+                          'time': controller.retryAvailabilityLabel(),
+                        }),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ],
                   ],
                 ),
               ),

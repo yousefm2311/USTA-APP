@@ -292,9 +292,16 @@ class AppStrings {
   static const String kycProblemUnknown = 'kycProblemUnknown';
   static const String kycAttemptsLimitReached = 'kycAttemptsLimitReached';
   static const String kycRetryCooldown = 'kycRetryCooldown';
+  static const String kycRetryAvailableAt = 'kycRetryAvailableAt';
   static const String kycAccessBlocked = 'kycAccessBlocked';
   static const String kycValidationError = 'kycValidationError';
   static const String kycSelfieSubmittedBody = 'kycSelfieSubmittedBody';
+  static const String kycAlreadyApproved = 'kycAlreadyApproved';
+  static const String kycCategoryIdBlurry = 'kycCategoryIdBlurry';
+  static const String kycCategoryIdInvalid = 'kycCategoryIdInvalid';
+  static const String kycCategoryFaceMismatch = 'kycCategoryFaceMismatch';
+  static const String kycCategoryFaceNotClear = 'kycCategoryFaceNotClear';
+  static const String kycCategoryFraudSuspected = 'kycCategoryFraudSuspected';
 
   // Artisan UI extras
   static const String artisanHomeTitle = 'artisanHomeTitle';
