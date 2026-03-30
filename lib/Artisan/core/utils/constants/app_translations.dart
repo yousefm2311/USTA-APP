@@ -139,6 +139,69 @@ class AppTranslations extends Translations {
       AppStrings.license: 'الرخصة',
       AppStrings.carphoto: 'صورة المركبة',
       AppStrings.profilephoto: 'الصورة الشخصية',
+      AppStrings.kycStepId: 'رفع الهوية',
+      AppStrings.kycStepSelfie: 'السيلفي',
+      AppStrings.kycStepStatus: 'الحالة',
+      AppStrings.kycIdTitle: 'تحقق الهوية للحرفي',
+      AppStrings.kycIdSubtitle:
+          'ارفع صورًا واضحة للبطاقة من الجهتين. لن يتم تفعيل حساب الحرفي بالكامل داخل السوق قبل إتمام المراجعة.',
+      AppStrings.kycIdFrontLabel: 'صورة البطاقة - الوجه الأمامي',
+      AppStrings.kycIdFrontHint: 'تأكد أن البيانات ظاهرة بالكامل والإضاءة جيدة.',
+      AppStrings.kycIdBackLabel: 'صورة البطاقة - الوجه الخلفي',
+      AppStrings.kycIdBackHint: 'التقط البطاقة بشكل مستقيم وبدون قص أو انعكاسات.',
+      AppStrings.kycUploadIdsButton: 'رفع صور الهوية',
+      AppStrings.kycIdUploadSuccess: 'تم رفع صور الهوية بنجاح.',
+      AppStrings.kycSelfieTitle: 'التقاط صورة سيلفي',
+      AppStrings.kycSelfieSubtitle:
+          'التقط سيلفي واضحة لوجهك حتى نطابقها مع صورة الهوية.',
+      AppStrings.kycSelfieCaptureLabel: 'صورة السيلفي',
+      AppStrings.kycSelfieHint:
+          'استخدم الكاميرا الأمامية، وخلّي وجهك ظاهر بالكامل بدون فلتر.',
+      AppStrings.kycUploadSelfieButton: 'رفع السيلفي وبدء التحقق',
+      AppStrings.kycStatusTitle: 'حالة التحقق',
+      AppStrings.kycStatusSubtitle:
+          'هنا تقدر تتابع نتيجة التحقق وتعيد المحاولة لو لزم الأمر.',
+      AppStrings.kycVerifiedHeadline: 'تم التحقق من الهوية',
+      AppStrings.kycVerifiedBody:
+          'هوية الحرفي أصبحت موثقة، ويمكنك الآن استخدام التطبيق بشكل كامل.',
+      AppStrings.kycFailedHeadline: 'فشل التحقق من الهوية',
+      AppStrings.kycProcessingHeadline: 'جاري مراجعة الصور',
+      AppStrings.kycProcessingBody:
+          'نحن نراجع البيانات الآن. اسحب التحديث أو انتظر قليلًا ثم أعد المحاولة.',
+      AppStrings.kycAttemptsRemaining: 'المحاولات المتبقية: @count',
+      AppStrings.kycGoToHome: 'الانتقال للرئيسية',
+      AppStrings.kycRefreshStatus: 'تحديث الحالة',
+      AppStrings.kycUseCamera: 'استخدام الكاميرا',
+      AppStrings.kycUseGallery: 'اختيار من المعرض',
+      AppStrings.kycNoImageSelected: 'لم يتم اختيار صورة بعد',
+      AppStrings.kycMissingIdImages: 'لازم ترفع الوجهين الأمامي والخلفي للبطاقة.',
+      AppStrings.kycMissingSelfie: 'لازم تلتقط صورة سيلفي قبل الرفع.',
+      AppStrings.kycVerificationPassed: 'تمت مطابقة الهوية بنجاح.',
+      AppStrings.kycVerificationFailed:
+          'تعذر مطابقة السيلفي مع الهوية. راجع الصور وحاول مرة أخرى.',
+      AppStrings.kycUnderReviewMessage:
+          'الصور مرفوعة بنجاح وجارٍ التحقق منها الآن.',
+      AppStrings.kycRejectedTitle: 'تم رفض التحقق الحالي',
+      AppStrings.kycRejectedSubtitle:
+          'راجع السبب الظاهر أدناه ثم ارفع الصور المطلوبة مرة أخرى.',
+      AppStrings.kycRetryDocuments: 'إعادة رفع البطاقة',
+      AppStrings.kycRetrySelfie: 'إعادة رفع السيلفي',
+      AppStrings.kycRetryBoth: 'إعادة رفع الكل',
+      AppStrings.kycIssueTypeLabel: 'نوع المشكلة',
+      AppStrings.kycProblemDocument: 'البطاقة غير واضحة أو بها مشكلة',
+      AppStrings.kycProblemSelfie: 'السيلفي غير واضحة أو غير صالحة',
+      AppStrings.kycProblemFace: 'الوجه لا يطابق بيانات الهوية',
+      AppStrings.kycProblemUnknown: 'نحتاج إعادة التحقق من الصور',
+      AppStrings.kycAttemptsLimitReached:
+          'وصلت للحد الأقصى من محاولات التحقق. تواصل مع الدعم.',
+      AppStrings.kycRetryCooldown:
+          'يمكنك إعادة المحاولة بعد @seconds ثانية.',
+      AppStrings.kycAccessBlocked:
+          'لازم تكمل توثيق الهوية أولًا قبل استخدام هذه الخاصية.',
+      AppStrings.kycValidationError:
+          'الملفات المرفوعة غير صالحة. تأكد من نوع الصورة وحجمها.',
+      AppStrings.kycSelfieSubmittedBody:
+          'تم رفع السيلفي بنجاح. انتظر لحظة بينما نراجع التطابق.',
       AppStrings.artisanHomeTitle: 'لوحة الحرفي',
       AppStrings.quickStats: 'الإحصائيات السريعة',
       AppStrings.statNew: 'طلبات جديدة',
@@ -546,6 +609,71 @@ class AppTranslations extends Translations {
       AppStrings.license: 'License',
       AppStrings.carphoto: 'Vehicle photo',
       AppStrings.profilephoto: 'Profile photo',
+      AppStrings.kycStepId: 'ID Upload',
+      AppStrings.kycStepSelfie: 'Selfie',
+      AppStrings.kycStepStatus: 'Status',
+      AppStrings.kycIdTitle: 'Artisan identity verification',
+      AppStrings.kycIdSubtitle:
+          'Upload clear photos of both sides of the ID. Artisan verification must be completed before going live.',
+      AppStrings.kycIdFrontLabel: 'ID front side',
+      AppStrings.kycIdFrontHint:
+          'Keep all details visible with good lighting and no blur.',
+      AppStrings.kycIdBackLabel: 'ID back side',
+      AppStrings.kycIdBackHint:
+          'Capture the card straight and avoid glare or cropped corners.',
+      AppStrings.kycUploadIdsButton: 'Upload ID images',
+      AppStrings.kycIdUploadSuccess: 'ID images uploaded successfully.',
+      AppStrings.kycSelfieTitle: 'Take a selfie',
+      AppStrings.kycSelfieSubtitle:
+          'Capture a clear selfie so we can compare it with the ID photo.',
+      AppStrings.kycSelfieCaptureLabel: 'Selfie image',
+      AppStrings.kycSelfieHint:
+          'Use the front camera and keep your full face visible without filters.',
+      AppStrings.kycUploadSelfieButton: 'Upload selfie and verify',
+      AppStrings.kycStatusTitle: 'Verification status',
+      AppStrings.kycStatusSubtitle:
+          'Track the result here and retry if the verification fails.',
+      AppStrings.kycVerifiedHeadline: 'Identity verified',
+      AppStrings.kycVerifiedBody:
+          'Your artisan identity is now verified and the app is fully unlocked.',
+      AppStrings.kycFailedHeadline: 'Verification failed',
+      AppStrings.kycProcessingHeadline: 'Verification in progress',
+      AppStrings.kycProcessingBody:
+          'We are reviewing your images now. Refresh in a moment if needed.',
+      AppStrings.kycAttemptsRemaining: 'Attempts remaining: @count',
+      AppStrings.kycGoToHome: 'Go to home',
+      AppStrings.kycRefreshStatus: 'Refresh status',
+      AppStrings.kycUseCamera: 'Use camera',
+      AppStrings.kycUseGallery: 'Choose from gallery',
+      AppStrings.kycNoImageSelected: 'No image selected yet',
+      AppStrings.kycMissingIdImages: 'Please upload both front and back ID images.',
+      AppStrings.kycMissingSelfie: 'Please capture a selfie before uploading.',
+      AppStrings.kycVerificationPassed: 'Identity matched successfully.',
+      AppStrings.kycVerificationFailed:
+          'We could not match the selfie with the ID. Please retry.',
+      AppStrings.kycUnderReviewMessage:
+          'Your images were uploaded successfully and are being reviewed.',
+      AppStrings.kycRejectedTitle: 'This verification was rejected',
+      AppStrings.kycRejectedSubtitle:
+          'Review the reason below, then upload the required images again.',
+      AppStrings.kycRetryDocuments: 'Re-upload ID',
+      AppStrings.kycRetrySelfie: 'Re-upload selfie',
+      AppStrings.kycRetryBoth: 'Re-upload both',
+      AppStrings.kycIssueTypeLabel: 'Issue type',
+      AppStrings.kycProblemDocument: 'The ID image is unclear',
+      AppStrings.kycProblemSelfie: 'The selfie image is unclear',
+      AppStrings.kycProblemFace: 'The face does not match the ID',
+      AppStrings.kycProblemUnknown: 'We need another verification attempt',
+      AppStrings.kycAttemptsLimitReached:
+          'You have reached the maximum verification attempts.',
+      AppStrings.kycRetryCooldown:
+          'You can retry again in @seconds seconds.',
+      AppStrings.kycAccessBlocked:
+          'Complete identity verification before using this feature.',
+      AppStrings.kycValidationError:
+          'The uploaded files are invalid. Please check the image type and size.',
+      AppStrings.kycSelfieSubmittedBody:
+          'Your selfie was uploaded successfully. We are checking the match now.',
       AppStrings.artisanHomeTitle: 'Artisan Dashboard',
       AppStrings.quickStats: 'Quick stats',
       AppStrings.statNew: 'New requests',
@@ -619,4 +747,3 @@ class AppTranslations extends Translations {
     },
   };
 }
-

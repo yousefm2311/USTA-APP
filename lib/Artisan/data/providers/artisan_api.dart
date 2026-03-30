@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart' as dio;
+import 'package:image_picker/image_picker.dart';
 import 'package:usta/Artisan/core/services/network/api_client.dart';
 import 'package:usta/Artisan/core/utils/constants/api_endpoints.dart';
 
@@ -88,6 +90,42 @@ class ArtisanApi {
 
   Future<dynamic> logout() {
     return _client.post(ApiEndpoints.logout);
+  }
+
+  Future<dynamic> getVerificationStatus() {
+    return _client.get(ApiEndpoints.verificationStatus);
+  }
+
+  Future<dynamic> uploadVerificationId({
+    required XFile idFront,
+    required XFile idBack,
+  }) async {
+    final formData = dio.FormData.fromMap({
+      'idFront': await dio.MultipartFile.fromFile(
+        idFront.path,
+        filename: idFront.name,
+      ),
+      'idBack': await dio.MultipartFile.fromFile(
+        idBack.path,
+        filename: idBack.name,
+      ),
+    });
+    return _client.postMultipart(ApiEndpoints.verificationUploadId, data: formData);
+  }
+
+  Future<dynamic> uploadVerificationSelfie({
+    required XFile selfie,
+  }) async {
+    final formData = dio.FormData.fromMap({
+      'selfie': await dio.MultipartFile.fromFile(
+        selfie.path,
+        filename: selfie.name,
+      ),
+    });
+    return _client.postMultipart(
+      ApiEndpoints.verificationUploadSelfie,
+      data: formData,
+    );
   }
 
   Future<dynamic> getReviews({int page = 1, int perPage = 20}) {
@@ -438,4 +476,3 @@ class ArtisanApi {
     });
   }
 }
-

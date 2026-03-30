@@ -10,6 +10,7 @@ import 'package:usta/Artisan/features/artisan/chat/controllers/chat_controller.d
 import 'package:usta/Artisan/core/services/auth_service.dart';
 import 'package:usta/Artisan/features/artisan/controllers/artisan_controller.dart';
 import 'package:usta/Artisan/core/services/network/api_client.dart';
+import 'package:usta/Artisan/core/services/verification/artisan_verification_guard_service.dart';
 import 'package:usta/Artisan/features/artisan/earnings/controllers/earnings_controller.dart';
 import 'package:usta/Artisan/features/artisan/help/controllers/complaints_controller.dart';
 import 'package:usta/Artisan/features/artisan/notifications/controllers/notifications_controller.dart';
@@ -23,6 +24,7 @@ import 'package:usta/Artisan/features/artisan/settings/controllers/locale_contro
 import 'package:usta/Artisan/features/artisan/settings/controllers/theme_controller.dart';
 import 'package:usta/Artisan/features/artisan/wallet/controllers/wallet_controller.dart';
 import 'package:usta/Artisan/features/auth/controllers/auth_controller.dart';
+import 'package:usta/Artisan/features/verification/controllers/artisan_verification_controller.dart';
 
 class Binding extends Bindings {
   @override
@@ -39,6 +41,9 @@ class Binding extends Bindings {
     }
     if (!Get.isRegistered<ApiClient>(tag: 'artisan')) {
       Get.put(ApiClient(), permanent: true, tag: 'artisan');
+    }
+    if (!Get.isRegistered<ArtisanVerificationGuardService>()) {
+      Get.put(ArtisanVerificationGuardService(), permanent: true);
     }
     final lifecycle = Get.find<RealtimeLifecycleService>();
     final requestsService = Get.put<RequestsRealtimeService>(
@@ -86,6 +91,7 @@ class Binding extends Bindings {
     Get.lazyPut(() => NotificationsController(), fenix: true);
     Get.lazyPut(() => ServicesController(), fenix: true);
     Get.lazyPut(() => PortfolioController(), fenix: true);
+    Get.lazyPut(() => ArtisanVerificationController(), fenix: true);
     Get.lazyPut(() => ComplaintsController(), fenix: true);
     Get.put<ChatController>(
       ChatController(),
@@ -96,4 +102,3 @@ class Binding extends Bindings {
     Get.lazyPut(() => EarningsController(), fenix: true);
   }
 }
-

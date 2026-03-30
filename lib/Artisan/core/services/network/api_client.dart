@@ -284,6 +284,20 @@ class ApiClient extends GetxService {
     );
   }
 
+  Future<dynamic> postMultipart(
+    String path, {
+    required dynamic data,
+    Map<String, dynamic>? query,
+  }) {
+    return _request(
+      method: 'POST',
+      path: path,
+      data: data,
+      queryParameters: query,
+      options: Options(contentType: 'multipart/form-data'),
+    );
+  }
+
   Future<dynamic> put(
     String path, {
     dynamic data,
@@ -329,13 +343,14 @@ class ApiClient extends GetxService {
     required String path,
     dynamic data,
     Map<String, dynamic>? queryParameters,
+    Options? options,
   }) async {
     try {
       final response = await _dio.request(
         path,
         data: data,
         queryParameters: queryParameters,
-        options: Options(method: method),
+        options: (options ?? Options()).copyWith(method: method),
       );
       return response.data ?? {};
     } on DioException catch (error) {

@@ -13,6 +13,11 @@ class ApiEndpoints {
   static const String changePassword = "$baseUrl/artisan/change-password";
   static const String logout = "$baseUrl/artisan/logout";
   static const String refresh = "$baseUrl/artisan/refresh-token";
+  static const String verificationStatus = "$baseUrl/artisan/verification/status";
+  static const String verificationUploadId =
+      "$baseUrl/artisan/verification/upload-id";
+  static const String verificationUploadSelfie =
+      "$baseUrl/artisan/verification/upload-selfie";
 
   // Profile
   static const String me = "$baseUrl/artisan/me";

@@ -10,6 +10,7 @@ import 'package:usta/Artisan/core/services/network/api_client.dart';
 import 'package:usta/Artisan/core/utils/constants/app_colors.dart';
 import 'package:usta/Artisan/core/utils/constants/app_constant.dart';
 import 'package:usta/Artisan/core/utils/constants/app_strings.dart';
+import 'package:usta/Artisan/core/utils/kyc/artisan_verification_route.dart';
 import 'package:usta/Artisan/core/utils/widgets/app_snackbar.dart';
 import 'package:usta/Artisan/core/utils/routes/routes.dart';
 import 'package:usta/Artisan/data/providers/artisan_api.dart';
@@ -73,7 +74,7 @@ class AuthController extends GetxController {
       }
       await _cacheProfile(response);
       await _handleRealtimeAfterAuth();
-      Get.offAllNamed(AppRoutes.bottomNaviBar);
+      Get.offAllNamed(resolveArtisanVerificationRoute(profile));
       _showSnack(AppStrings.loginSuccess.tr, Colors.green);
     } catch (e) {
       if (e is ApiException) {
@@ -525,7 +526,6 @@ class AuthController extends GetxController {
     }
   }
 }
-
 
 
 
