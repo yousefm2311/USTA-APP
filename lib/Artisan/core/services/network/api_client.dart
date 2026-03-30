@@ -361,6 +361,20 @@ class ApiClient extends GetxService {
       );
       return response.data ?? {};
     } on DioException catch (error) {
+      if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.sendTimeout) {
+        throw ApiException(
+          'Request timed out',
+          code: 'network_timeout',
+        );
+      }
+      if (error.type == DioExceptionType.connectionError) {
+        throw ApiException(
+          'Network unavailable',
+          code: 'network_unavailable',
+        );
+      }
       final payload = _extractErrorPayload(error);
       throw ApiException(
         payload.message,

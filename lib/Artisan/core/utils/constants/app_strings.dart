@@ -297,6 +297,10 @@ class AppStrings {
   static const String kycValidationError = 'kycValidationError';
   static const String kycSelfieSubmittedBody = 'kycSelfieSubmittedBody';
   static const String kycAlreadyApproved = 'kycAlreadyApproved';
+  static const String kycNetworkError = 'kycNetworkError';
+  static const String kycTimeoutError = 'kycTimeoutError';
+  static const String kycSessionExpired = 'kycSessionExpired';
+  static const String kycCameraPermissionDenied = 'kycCameraPermissionDenied';
   static const String kycCategoryIdBlurry = 'kycCategoryIdBlurry';
   static const String kycCategoryIdInvalid = 'kycCategoryIdInvalid';
   static const String kycCategoryFaceMismatch = 'kycCategoryFaceMismatch';

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:usta/Artisan/core/services/verification/artisan_verification_guard_service.dart';
 import 'package:usta/Artisan/core/utils/constants/app_colors.dart';
 import 'package:usta/Artisan/core/utils/constants/app_strings.dart';
 
@@ -25,48 +26,58 @@ class VerificationScaffold extends StatelessWidget {
     final theme = Theme.of(context);
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF4F7FB),
-        body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF0F172A), Color(0xFF1D4ED8)],
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
+      child: PopScope(
+        canPop: false,
+        onPopInvoked: (_) {
+          if (Get.isRegistered<ArtisanVerificationGuardService>()) {
+            Get.find<ArtisanVerificationGuardService>().syncAndEnforce(
+              refreshFromServer: false,
+            );
+          }
+        },
+        child: Scaffold(
+          backgroundColor: const Color(0xFFF4F7FB),
+          body: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0F172A), Color(0xFF1D4ED8)],
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
                   ),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
-                        height: 1.5,
+                      const SizedBox(height: 8),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withOpacity(0.9),
+                          height: 1.5,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    VerificationStepIndicator(currentStep: currentStep),
-                  ],
+                      const SizedBox(height: 20),
+                      VerificationStepIndicator(currentStep: currentStep),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              child,
-            ],
+                const SizedBox(height: 20),
+                child,
+              ],
+            ),
           ),
         ),
       ),
@@ -191,6 +202,19 @@ class VerificationImageCard extends StatelessWidget {
                 ? Image.file(
                     File(filePath!),
                     fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(icon, size: 42, color: AppColors.primary),
+                        const SizedBox(height: 10),
+                        Text(
+                          AppStrings.filePickFailed.tr,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
                   )
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,

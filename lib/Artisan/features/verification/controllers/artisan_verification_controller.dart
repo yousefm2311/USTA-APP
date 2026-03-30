@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -138,6 +139,8 @@ class ArtisanVerificationController extends GetxController {
       _showSuccess(AppStrings.kycIdUploadSuccess.tr);
     } on ApiException catch (error) {
       _showError(_mapApiError(error));
+    } catch (_) {
+      _showError(AppStrings.couldNotCompleteRequest.tr);
     } finally {
       uploadingIds.value = false;
       pendingOperation.value = '';
@@ -176,6 +179,8 @@ class ArtisanVerificationController extends GetxController {
       }
     } on ApiException catch (error) {
       _showError(_mapApiError(error));
+    } catch (_) {
+      _showError(AppStrings.couldNotCompleteRequest.tr);
     } finally {
       uploadingSelfie.value = false;
       pendingOperation.value = '';
@@ -231,6 +236,17 @@ class ArtisanVerificationController extends GetxController {
         imageQuality: 88,
         preferredCameraDevice: preferredCameraDevice,
       );
+    } on PlatformException catch (error) {
+      final code = error.code.toLowerCase();
+      final message = (error.message ?? '').toLowerCase();
+      if (code.contains('camera_access_denied') ||
+          code.contains('photo_access_denied') ||
+          message.contains('permission')) {
+        _showError(AppStrings.kycCameraPermissionDenied.tr);
+      } else {
+        _showError(AppStrings.filePickFailed.tr);
+      }
+      return null;
     } catch (error) {
       _showError(AppStrings.filePickFailed.tr);
       return null;
@@ -431,6 +447,9 @@ class ArtisanVerificationController extends GetxController {
     if (statusCode == 403) {
       return AppStrings.kycAccessBlocked.tr;
     }
+    if (statusCode == 401) {
+      return AppStrings.kycSessionExpired.tr;
+    }
     if (statusCode == 409 && error.code == 'kyc_already_approved') {
       return AppStrings.kycAlreadyApproved.tr;
     }
@@ -450,6 +469,12 @@ class ArtisanVerificationController extends GetxController {
     if (statusCode == 400 &&
         message.toLowerCase().contains('image')) {
       return AppStrings.kycValidationError.tr;
+    }
+    if (error.code == 'network_timeout') {
+      return AppStrings.kycTimeoutError.tr;
+    }
+    if (error.code == 'network_unavailable') {
+      return AppStrings.kycNetworkError.tr;
     }
     return message.isNotEmpty
         ? message

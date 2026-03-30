@@ -206,6 +206,14 @@ class AppTranslations extends Translations {
           'تم رفع السيلفي بنجاح. انتظر لحظة بينما نراجع التطابق.',
       AppStrings.kycAlreadyApproved:
           'تم اعتماد هويتك بالفعل ويمكنك متابعة استخدام التطبيق.',
+      AppStrings.kycNetworkError:
+          'تعذر الاتصال بالإنترنت. تحقق من الشبكة ثم حاول مرة أخرى.',
+      AppStrings.kycTimeoutError:
+          'الطلب استغرق وقتًا أطول من المتوقع. حاول مرة أخرى.',
+      AppStrings.kycSessionExpired:
+          'انتهت الجلسة. سجّل الدخول مرة أخرى للمتابعة.',
+      AppStrings.kycCameraPermissionDenied:
+          'مطلوب إذن الكاميرا أو الصور لإكمال التحقق.',
       AppStrings.kycCategoryIdBlurry: 'صورة البطاقة غير واضحة',
       AppStrings.kycCategoryIdInvalid: 'البطاقة غير صالحة أو غير مكتملة',
       AppStrings.kycCategoryFaceMismatch: 'الوجه لا يطابق بيانات الهوية',
@@ -687,6 +695,14 @@ class AppTranslations extends Translations {
           'Your selfie was uploaded successfully. We are checking the match now.',
       AppStrings.kycAlreadyApproved:
           'Your identity is already approved and the app is unlocked.',
+      AppStrings.kycNetworkError:
+          'No internet connection. Check your network and try again.',
+      AppStrings.kycTimeoutError:
+          'The request took too long. Please try again.',
+      AppStrings.kycSessionExpired:
+          'Your session expired. Please sign in again to continue.',
+      AppStrings.kycCameraPermissionDenied:
+          'Camera or photo permission is required to continue verification.',
       AppStrings.kycCategoryIdBlurry: 'ID image is blurry',
       AppStrings.kycCategoryIdInvalid: 'ID is invalid or incomplete',
       AppStrings.kycCategoryFaceMismatch: 'Face does not match the ID',
