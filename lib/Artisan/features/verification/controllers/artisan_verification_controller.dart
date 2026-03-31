@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:usta/Artisan/core/services/database/share_Prefs.dart';
 import 'package:usta/Artisan/core/services/network/api_client.dart';
+import 'package:usta/Artisan/core/services/verification/artisan_verification_image_guard.dart';
 import 'package:usta/Artisan/core/services/verification/artisan_verification_guard_service.dart';
 import 'package:usta/Artisan/core/utils/constants/app_constant.dart';
 import 'package:usta/Artisan/core/utils/constants/app_strings.dart';
@@ -23,17 +24,23 @@ class ArtisanVerificationController extends GetxController {
     ArtisanApi? api,
     ImagePicker? picker,
     AppPrefs? prefs,
-  })  : _api = api ?? ArtisanApi(),
-        _picker = picker ?? ImagePicker(),
-        _prefs = prefs ?? AppPrefs();
+    ArtisanVerificationImageGuard? imageGuard,
+  }) : _api = api ?? ArtisanApi(),
+       _picker = picker ?? ImagePicker(),
+       _prefs = prefs ?? AppPrefs(),
+       _imageGuard = imageGuard ?? ArtisanVerificationImageGuard();
 
   final ArtisanApi _api;
   final ImagePicker _picker;
   final AppPrefs _prefs;
+  final ArtisanVerificationImageGuard _imageGuard;
 
   final Rxn<XFile> idFront = Rxn<XFile>();
   final Rxn<XFile> idBack = Rxn<XFile>();
   final Rxn<XFile> selfie = Rxn<XFile>();
+  final Rxn<Uint8List> idFrontBytes = Rxn<Uint8List>();
+  final Rxn<Uint8List> idBackBytes = Rxn<Uint8List>();
+  final Rxn<Uint8List> selfieBytes = Rxn<Uint8List>();
   final RxMap<String, dynamic> verification = <String, dynamic>{}.obs;
   final RxBool loadingStatus = false.obs;
   final RxBool uploadingIds = false.obs;
@@ -42,10 +49,14 @@ class ArtisanVerificationController extends GetxController {
 
   bool get hasSelectedIds => idFront.value != null && idBack.value != null;
   bool get hasSelectedSelfie => selfie.value != null;
-  bool get isVerified => verification['identityVerified'] == true || verification['isVerified'] == true;
+  bool get isVerified =>
+      verification['identityVerified'] == true ||
+      verification['isVerified'] == true;
   bool get canRetry => verification['canRetry'] != false;
-  int get attemptsRemaining => (verification['attemptsRemaining'] as num?)?.toInt() ?? 0;
-  int get cooldownRemaining => (verification['cooldownRemaining'] as num?)?.toInt() ?? 0;
+  int get attemptsRemaining =>
+      (verification['attemptsRemaining'] as num?)?.toInt() ?? 0;
+  int get cooldownRemaining =>
+      (verification['cooldownRemaining'] as num?)?.toInt() ?? 0;
   bool get hasIdImages => verification['hasIdImages'] == true;
   String get verificationStatus =>
       (verification['verificationStatus'] ?? 'pending_documents').toString();
@@ -54,14 +65,12 @@ class ArtisanVerificationController extends GetxController {
       verification['failureReason']?.toString();
   String? get rejectionCategory =>
       verification['rejectionCategory']?.toString();
-  String get retryAction =>
-      (verification['retryAction'] ?? 'both').toString();
+  String get retryAction => (verification['retryAction'] ?? 'both').toString();
   String get problemType =>
       (verification['problemType'] ?? 'unknown').toString();
   String? get blockedReasonCode =>
       verification['blockedReasonCode']?.toString();
-  String? get availableRetryAt =>
-      verification['availableRetryAt']?.toString();
+  String? get availableRetryAt => verification['availableRetryAt']?.toString();
   bool get isCooldownActive => cooldownRemaining > 0;
 
   @override
@@ -70,24 +79,64 @@ class ArtisanVerificationController extends GetxController {
     refreshStatus();
   }
 
+  @override
+  void onClose() {
+    _imageGuard.close();
+    super.onClose();
+  }
+
   Future<void> pickIdFront(ImageSource source) async {
-    idFront.value = await _pickImage(
-      source,
-      preferredCameraDevice: CameraDevice.rear,
+    await setIdFrontFile(
+      await _pickImage(source, preferredCameraDevice: CameraDevice.rear),
     );
   }
 
   Future<void> pickIdBack(ImageSource source) async {
-    idBack.value = await _pickImage(
-      source,
-      preferredCameraDevice: CameraDevice.rear,
+    await setIdBackFile(
+      await _pickImage(source, preferredCameraDevice: CameraDevice.rear),
     );
   }
 
   Future<void> pickSelfie(ImageSource source) async {
-    selfie.value = await _pickImage(
+    await setSelfieFile(
+      await _pickImage(source, preferredCameraDevice: CameraDevice.front),
+    );
+  }
+
+  Future<XFile?> pickVerificationImage(
+    ImageSource source, {
+    required bool selfie,
+  }) async {
+    return _pickImage(
       source,
-      preferredCameraDevice: CameraDevice.front,
+      preferredCameraDevice: selfie ? CameraDevice.front : CameraDevice.rear,
+    );
+  }
+
+  Future<void> setIdFrontFile(XFile? file) async {
+    await _storePickedImage(
+      file: file,
+      imageRef: idFront,
+      bytesRef: idFrontBytes,
+      prefix: 'kyc-id-front',
+    );
+  }
+
+  Future<void> setIdBackFile(XFile? file) async {
+    await _storePickedImage(
+      file: file,
+      imageRef: idBack,
+      bytesRef: idBackBytes,
+      prefix: 'kyc-id-back',
+    );
+  }
+
+  Future<void> setSelfieFile(XFile? file) async {
+    await _storePickedImage(
+      file: file,
+      imageRef: selfie,
+      bytesRef: selfieBytes,
+      prefix: 'kyc-selfie',
     );
   }
 
@@ -158,6 +207,18 @@ class ArtisanVerificationController extends GetxController {
       _showError(AppStrings.kycMissingSelfie.tr);
       return;
     }
+
+    final selfieValidation = await _imageGuard.validateSelfie(
+      currentSelfie,
+      invalidMessage: AppStrings.kycInvalidSelfieImage.tr,
+    );
+    if (!selfieValidation.isValid) {
+      _showError(
+        selfieValidation.message ?? AppStrings.kycInvalidSelfieImage.tr,
+      );
+      return;
+    }
+
     if (uploadingSelfie.value) return;
     uploadingSelfie.value = true;
     pendingOperation.value = 'selfie';
@@ -259,6 +320,69 @@ class ArtisanVerificationController extends GetxController {
     }
   }
 
+  Future<void> _storePickedImage({
+    required XFile? file,
+    required Rxn<XFile> imageRef,
+    required Rxn<Uint8List> bytesRef,
+    required String prefix,
+  }) async {
+    if (file == null) {
+      imageRef.value = null;
+      bytesRef.value = null;
+      return;
+    }
+
+    final prepared = await _preparePickedImage(file, prefix: prefix);
+    if (prepared == null) return;
+
+    imageRef.value = prepared.file;
+    bytesRef.value = prepared.bytes;
+  }
+
+  Future<_PreparedVerificationImage?> _preparePickedImage(
+    XFile source, {
+    required String prefix,
+  }) async {
+    try {
+      final bytes = await source.readAsBytes();
+      if (bytes.isEmpty) {
+        _showError(AppStrings.filePickFailed.tr);
+        return null;
+      }
+
+      final extension = _imageExtensionFrom(source);
+      final outputPath =
+          '${Directory.systemTemp.path}/$prefix-${DateTime.now().microsecondsSinceEpoch}$extension';
+      final outputFile = File(outputPath);
+      await outputFile.writeAsBytes(bytes, flush: true);
+
+      return _PreparedVerificationImage(
+        file: XFile(
+          outputFile.path,
+          mimeType: source.mimeType,
+          name: source.name.isNotEmpty ? source.name : '$prefix$extension',
+        ),
+        bytes: Uint8List.fromList(bytes),
+      );
+    } catch (_) {
+      _showError(AppStrings.filePickFailed.tr);
+      return null;
+    }
+  }
+
+  String _imageExtensionFrom(XFile file) {
+    final source = file.name.isNotEmpty ? file.name : file.path;
+    final dotIndex = source.lastIndexOf('.');
+    if (dotIndex != -1 && dotIndex < source.length - 1) {
+      return source.substring(dotIndex);
+    }
+
+    final mime = (file.mimeType ?? '').toLowerCase();
+    if (mime.contains('png')) return '.png';
+    if (mime.contains('webp')) return '.webp';
+    return '.jpg';
+  }
+
   bool _canRetryNow() {
     if (!canRetry) {
       _showError(AppStrings.kycAttemptsLimitReached.tr);
@@ -266,9 +390,7 @@ class ArtisanVerificationController extends GetxController {
     }
     if (isCooldownActive) {
       _showError(
-        AppStrings.kycRetryCooldown.trParams({
-          'seconds': '$cooldownRemaining',
-        }),
+        AppStrings.kycRetryCooldown.trParams({'seconds': '$cooldownRemaining'}),
       );
       return false;
     }
@@ -277,7 +399,9 @@ class ArtisanVerificationController extends GetxController {
 
   Future<void> _loadCachedProfileFallback() async {
     try {
-      final cached = decodeCachedArtisanProfile(_prefs.getString(kCachedProfileKey));
+      final cached = decodeCachedArtisanProfile(
+        _prefs.getString(kCachedProfileKey),
+      );
       final cachedVerification = _verificationFromProfile(cached);
       if (cachedVerification != null) {
         verification.assignAll(cachedVerification);
@@ -291,7 +415,8 @@ class ArtisanVerificationController extends GetxController {
     if (response is! Map<String, dynamic>) return;
     final artisan = _map(response['artisan']);
     final verificationPayload = _map(response['verification']);
-    final effectiveVerification = verificationPayload ?? _verificationFromProfile(artisan);
+    final effectiveVerification =
+        verificationPayload ?? _verificationFromProfile(artisan);
     if (effectiveVerification != null) {
       verification.assignAll(effectiveVerification);
     }
@@ -300,7 +425,9 @@ class ArtisanVerificationController extends GetxController {
     }
   }
 
-  Map<String, dynamic>? _verificationFromProfile(Map<String, dynamic>? artisan) {
+  Map<String, dynamic>? _verificationFromProfile(
+    Map<String, dynamic>? artisan,
+  ) {
     if (artisan == null) return null;
     final attempts = (artisan['verificationAttempts'] as num?)?.toInt() ?? 0;
     final maxAttempts = (artisan['maxAttempts'] as num?)?.toInt() ?? 3;
@@ -308,7 +435,8 @@ class ArtisanVerificationController extends GetxController {
     return {
       'identityVerified': artisan['identityVerified'] ?? false,
       'isVerified': artisan['identityVerified'] ?? false,
-      'verificationStatus': artisan['verificationStatus'] ?? 'pending_documents',
+      'verificationStatus':
+          artisan['verificationStatus'] ?? 'pending_documents',
       'attempts': attempts,
       'maxAttempts': maxAttempts,
       'failureReason': artisan['verificationFailureReason'],
@@ -317,7 +445,8 @@ class ArtisanVerificationController extends GetxController {
       'rejectionReasonInternal': artisan['rejectionReasonInternal'],
       'rejectionCategory': category,
       'confidence': artisan['verificationConfidence'],
-      'hasIdImages': artisan['idFrontImage'] != null && artisan['idBackImage'] != null,
+      'hasIdImages':
+          artisan['idFrontImage'] != null && artisan['idBackImage'] != null,
       'hasSelfieImage': artisan['selfieImage'] != null,
       'canRetry': attempts < maxAttempts,
       'attemptsRemaining': attempts >= maxAttempts ? 0 : maxAttempts - attempts,
@@ -359,7 +488,9 @@ class ArtisanVerificationController extends GetxController {
     if (originalBytes > 0 && originalBytes <= skipCompressionBelowBytes) {
       return source;
     }
-    final extension = originalPath.toLowerCase().endsWith('.png') ? '.png' : '.jpg';
+    final extension = originalPath.toLowerCase().endsWith('.png')
+        ? '.png'
+        : '.jpg';
     final targetPath = originalPath.replaceFirst(
       RegExp(r'(\.[a-zA-Z0-9]+)?$'),
       '-$suffix-compressed$extension',
@@ -372,9 +503,7 @@ class ArtisanVerificationController extends GetxController {
       minWidth: minWidth,
       minHeight: minHeight,
       keepExif: false,
-      format: extension == '.png'
-          ? CompressFormat.png
-          : CompressFormat.jpeg,
+      format: extension == '.png' ? CompressFormat.png : CompressFormat.jpeg,
     );
 
     return compressed ?? source;
@@ -477,8 +606,7 @@ class ArtisanVerificationController extends GetxController {
     if (statusCode == 422) {
       return AppStrings.kycValidationError.tr;
     }
-    if (statusCode == 400 &&
-        message.toLowerCase().contains('image')) {
+    if (statusCode == 400 && message.toLowerCase().contains('image')) {
       return AppStrings.kycValidationError.tr;
     }
     if (error.code == 'network_timeout') {
@@ -487,9 +615,7 @@ class ArtisanVerificationController extends GetxController {
     if (error.code == 'network_unavailable') {
       return AppStrings.kycNetworkError.tr;
     }
-    return message.isNotEmpty
-        ? message
-        : AppStrings.couldNotCompleteRequest.tr;
+    return message.isNotEmpty ? message : AppStrings.couldNotCompleteRequest.tr;
   }
 
   void _showSuccess(String message) {
@@ -501,10 +627,13 @@ class ArtisanVerificationController extends GetxController {
   }
 
   void _showError(String message) {
-    AppSnackBar.show(
-      AppStrings.error.tr,
-      message,
-      type: SnackBarType.error,
-    );
+    AppSnackBar.show(AppStrings.error.tr, message, type: SnackBarType.error);
   }
+}
+
+class _PreparedVerificationImage {
+  const _PreparedVerificationImage({required this.file, required this.bytes});
+
+  final XFile file;
+  final Uint8List bytes;
 }

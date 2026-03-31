@@ -1,4 +1,6 @@
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:usta/Artisan/core/middleware/middleware.dart';
 import 'package:usta/Artisan/core/utils/constants/app_constant.dart';
 import 'package:usta/Artisan/features/artisan/artisan_active_requests/artisan_active_requests_view.dart';
@@ -42,6 +44,8 @@ import 'package:usta/Artisan/features/auth/views/register_view.dart';
 import 'package:usta/Artisan/features/verification/views/artisan_id_upload_view.dart';
 import 'package:usta/Artisan/features/verification/views/artisan_rejected_view.dart';
 import 'package:usta/Artisan/features/verification/views/artisan_selfie_view.dart';
+import 'package:usta/Artisan/features/verification/views/artisan_verification_camera_view.dart';
+import 'package:usta/Artisan/features/verification/views/artisan_verification_document_crop_view.dart';
 import 'package:usta/Artisan/features/verification/views/artisan_verification_status_view.dart';
 import 'package:usta/app/choose_user_type_view.dart';
 
@@ -311,20 +315,57 @@ abstract class AppRoutes {
       transition: Transition.cupertino,
       transitionDuration: kTransitionDuration,
     ),
+    GetPage(
+      name: artisanVerificationCameraView,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>? ?? const {};
+        return ArtisanVerificationCameraView(
+          mode:
+              args['mode'] as VerificationCaptureMode? ??
+              VerificationCaptureMode.document,
+          screenTitle: args['screenTitle'] as String?,
+          screenHint: args['screenHint'] as String?,
+          frameLabel: args['frameLabel'] as String?,
+        );
+      },
+      transition: Transition.cupertino,
+      transitionDuration: kTransitionDuration,
+    ),
+    GetPage(
+      name: artisanVerificationDocumentCropView,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>? ?? const {};
+        final file = args['file'];
+        if (file is! XFile) {
+          return const SizedBox.shrink();
+        }
+        return ArtisanVerificationDocumentCropView(
+          file: file,
+          screenTitle: args['screenTitle'] as String?,
+          screenHint: args['screenHint'] as String?,
+          frameLabel: args['frameLabel'] as String?,
+        );
+      },
+      transition: Transition.cupertino,
+      transitionDuration: kTransitionDuration,
+    ),
   ];
 
   static const String login = '/login';
   static const String chooseUserTypeView = '/chooseUserTypeView';
   static const String artisanLocationSettingsView =
       '/artisanLocationSettingsView';
-  static const String artisanVerificationIdView =
-      '/artisanVerificationIdView';
+  static const String artisanVerificationIdView = '/artisanVerificationIdView';
   static const String artisanVerificationSelfieView =
       '/artisanVerificationSelfieView';
   static const String artisanVerificationStatusView =
       '/artisanVerificationStatusView';
   static const String artisanVerificationRejectedView =
       '/artisanVerificationRejectedView';
+  static const String artisanVerificationCameraView =
+      '/artisanVerificationCameraView';
+  static const String artisanVerificationDocumentCropView =
+      '/artisanVerificationDocumentCropView';
   static const String customerBottomNaviBar = '/customerBottomNaviBar';
   static const String customerHomeView = '/customerHomeView';
   static const String artisanHistoryView = '/artisanHistoryView';

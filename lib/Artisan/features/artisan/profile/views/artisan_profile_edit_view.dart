@@ -80,24 +80,37 @@ class _ArtisanProfileEditViewState extends State<ArtisanProfileEditView> {
   }
 
   Future<void> _save() async {
-    await controller.updateProfile({
+    final payload = <String, dynamic>{
       'name': nameCtrl.text.trim(),
       'phone': phoneCtrl.text.trim(),
       'profession': professionCtrl.text.trim(),
-      'address': addressCtrl.text.trim(),
-      'description': descriptionCtrl.text.trim(),
-      if (_avatarBase64 != null) 'avatar': _avatarBase64,
-    });
-    if (mounted) Get.back();
+    };
+
+    final address = addressCtrl.text.trim();
+    if (address.isNotEmpty) {
+      payload['address'] = address;
+    }
+
+    final description = descriptionCtrl.text.trim();
+    if (description.isNotEmpty) {
+      payload['description'] = description;
+    }
+
+    if (_avatarBase64 != null && _avatarBase64!.isNotEmpty) {
+      payload['avatar'] = _avatarBase64;
+    }
+
+    final didSave = await controller.updateProfile(payload);
+    if (mounted && didSave) Get.back();
   }
 
   InputDecoration _decoration(BuildContext context, String label) {
     final scheme = Theme.of(context).colorScheme;
     return InputDecoration(
       labelText: label,
-      labelStyle: AppTextStyles.body(context).copyWith(
-        color: scheme.onSurface.withOpacity(0.7),
-      ),
+      labelStyle: AppTextStyles.body(
+        context,
+      ).copyWith(color: scheme.onSurface.withOpacity(0.7)),
       filled: true,
       fillColor: scheme.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -159,20 +172,13 @@ class _ArtisanProfileEditViewState extends State<ArtisanProfileEditView> {
               child: _avatarBytes != null
                   ? Image.memory(_avatarBytes!, fit: BoxFit.cover)
                   : avatarUrl.isEmpty
-                      ? Icon(
-                          Icons.person,
-                          color: scheme.primary,
-                          size: 34,
-                        )
-                      : Image.network(
-                          avatarUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Icon(
-                            Icons.person,
-                            color: scheme.primary,
-                            size: 34,
-                          ),
-                        ),
+                  ? Icon(Icons.person, color: scheme.primary, size: 34)
+                  : Image.network(
+                      avatarUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          Icon(Icons.person, color: scheme.primary, size: 34),
+                    ),
             ),
           ),
           const SizedBox(width: 12),
@@ -182,16 +188,16 @@ class _ArtisanProfileEditViewState extends State<ArtisanProfileEditView> {
               children: [
                 Text(
                   AppStrings.profilephoto.tr,
-                  style: AppTextStyles.body(context).copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppTextStyles.body(
+                    context,
+                  ).copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   AppStrings.edit.tr,
-                  style: AppTextStyles.caption(context).copyWith(
-                    color: scheme.onSurface.withOpacity(0.65),
-                  ),
+                  style: AppTextStyles.caption(
+                    context,
+                  ).copyWith(color: scheme.onSurface.withOpacity(0.65)),
                 ),
               ],
             ),
@@ -315,9 +321,9 @@ class _ArtisanProfileEditViewState extends State<ArtisanProfileEditView> {
                         const SizedBox(height: 2),
                         Text(
                           "عدّل بياناتك الأساسية واحفظ التغييرات",
-                          style: AppTextStyles.caption(context).copyWith(
-                            color: scheme.onSurface.withOpacity(0.65),
-                          ),
+                          style: AppTextStyles.caption(
+                            context,
+                          ).copyWith(color: scheme.onSurface.withOpacity(0.65)),
                         ),
                       ],
                     ),
@@ -376,4 +382,3 @@ class _ArtisanProfileEditViewState extends State<ArtisanProfileEditView> {
     );
   }
 }
-

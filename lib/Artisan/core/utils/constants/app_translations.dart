@@ -146,9 +146,11 @@ class AppTranslations extends Translations {
       AppStrings.kycIdSubtitle:
           'ارفع صورًا واضحة للبطاقة من الجهتين. لن يتم تفعيل حساب الحرفي بالكامل داخل السوق قبل إتمام المراجعة.',
       AppStrings.kycIdFrontLabel: 'صورة البطاقة - الوجه الأمامي',
-      AppStrings.kycIdFrontHint: 'تأكد أن البيانات ظاهرة بالكامل والإضاءة جيدة.',
+      AppStrings.kycIdFrontHint:
+          'تأكد أن البيانات ظاهرة بالكامل والإضاءة جيدة.',
       AppStrings.kycIdBackLabel: 'صورة البطاقة - الوجه الخلفي',
-      AppStrings.kycIdBackHint: 'التقط البطاقة بشكل مستقيم وبدون قص أو انعكاسات.',
+      AppStrings.kycIdBackHint:
+          'التقط البطاقة بشكل مستقيم وبدون قص أو انعكاسات.',
       AppStrings.kycUploadIdsButton: 'رفع صور الهوية',
       AppStrings.kycIdUploadSuccess: 'تم رفع صور الهوية بنجاح.',
       AppStrings.kycSelfieTitle: 'التقاط صورة سيلفي',
@@ -174,7 +176,8 @@ class AppTranslations extends Translations {
       AppStrings.kycUseCamera: 'استخدام الكاميرا',
       AppStrings.kycUseGallery: 'اختيار من المعرض',
       AppStrings.kycNoImageSelected: 'لم يتم اختيار صورة بعد',
-      AppStrings.kycMissingIdImages: 'لازم ترفع الوجهين الأمامي والخلفي للبطاقة.',
+      AppStrings.kycMissingIdImages:
+          'لازم ترفع الوجهين الأمامي والخلفي للبطاقة.',
       AppStrings.kycMissingSelfie: 'لازم تلتقط صورة سيلفي قبل الرفع.',
       AppStrings.kycVerificationPassed: 'تمت مطابقة الهوية بنجاح.',
       AppStrings.kycVerificationFailed:
@@ -194,10 +197,8 @@ class AppTranslations extends Translations {
       AppStrings.kycProblemUnknown: 'نحتاج إعادة التحقق من الصور',
       AppStrings.kycAttemptsLimitReached:
           'وصلت للحد الأقصى من محاولات التحقق. تواصل مع الدعم.',
-      AppStrings.kycRetryCooldown:
-          'يمكنك إعادة المحاولة بعد @seconds ثانية.',
-      AppStrings.kycRetryAvailableAt:
-          'يمكنك إعادة المحاولة عند @time.',
+      AppStrings.kycRetryCooldown: 'يمكنك إعادة المحاولة بعد @seconds ثانية.',
+      AppStrings.kycRetryAvailableAt: 'يمكنك إعادة المحاولة عند @time.',
       AppStrings.kycAccessBlocked:
           'لازم تكمل توثيق الهوية أولًا قبل استخدام هذه الخاصية.',
       AppStrings.kycValidationError:
@@ -214,6 +215,33 @@ class AppTranslations extends Translations {
           'انتهت الجلسة. سجّل الدخول مرة أخرى للمتابعة.',
       AppStrings.kycCameraPermissionDenied:
           'مطلوب إذن الكاميرا أو الصور لإكمال التحقق.',
+      AppStrings.kycCameraOpenFailed:
+          'تعذر فتح الكاميرا الآن. جرّب مرة أخرى أو اختر صورة من المعرض.',
+      AppStrings.kycInvalidSelfieImage:
+          'السيلفي لازم تكون لوجه واحد واضح ومواجهة مباشرة للكاميرا.',
+      AppStrings.kycReadyToUpload: 'الصورة جاهزة للرفع',
+      AppStrings.kycDocumentGuide:
+          'ضع البطاقة كاملة داخل الإطار مع إضاءة قوية وبدون قص.',
+      AppStrings.kycSelfieGuide:
+          'خلّي وجهك داخل الدائرة، انظر مباشرة للكاميرا وبدون فلتر.',
+      AppStrings.kycPreviewDocument: 'عاين البطاقة قبل الرفع',
+      AppStrings.kycPreviewSelfie: 'عاين السيلفي قبل الرفع',
+      AppStrings.kycCapturePhoto: 'التقاط الصورة',
+      AppStrings.kycRetakePhoto: 'إعادة التصوير',
+      AppStrings.kycUseThisPhoto: 'استخدام هذه الصورة',
+      AppStrings.kycCameraPositionHint:
+          'ثبّت البطاقة داخل الإطار ثم التقط الصورة',
+      AppStrings.kycCameraFaceHint: 'ارفع الهاتف بمستوى العين وخلفية هادئة',
+      AppStrings.kycRequiredImagesTitle: 'الصور المطلوبة',
+      AppStrings.kycDocumentsReadyStatus: 'تم تجهيز @count من 2',
+      AppStrings.kycCaptureChecklistTitle: 'قبل الرفع',
+      AppStrings.kycCaptureChecklistBody:
+          'صوّر البطاقة كاملة داخل الإطار، بدون لمعان، وبالبيانات واضحة في الوجهين.',
+      AppStrings.kycAdjustDocumentCrop:
+          'حرّك الصورة وكبّرها حتى تملأ البطاقة الإطار بالكامل.',
+      AppStrings.kycCropCoverageReady: 'منطقة البطاقة جاهزة للقص.',
+      AppStrings.kycFrontSideShort: 'وجه البطاقة',
+      AppStrings.kycBackSideShort: 'ظهر البطاقة',
       AppStrings.kycCategoryIdBlurry: 'صورة البطاقة غير واضحة',
       AppStrings.kycCategoryIdInvalid: 'البطاقة غير صالحة أو غير مكتملة',
       AppStrings.kycCategoryFaceMismatch: 'الوجه لا يطابق بيانات الهوية',
@@ -338,8 +366,7 @@ class AppTranslations extends Translations {
       AppStrings.filePickFailed: 'فشل اختيار الملف',
       AppStrings.videoTooLarge: 'الفيديو أكبر من 20MB',
       AppStrings.imageTooLarge: 'الصورة أكبر من 3MB',
-      AppStrings.microphonePermissionRequired:
-          'السماح بالمايك مطلوب للتسجيل',
+      AppStrings.microphonePermissionRequired: 'السماح بالمايك مطلوب للتسجيل',
       AppStrings.recordingNotAvailable:
           'التسجيل غير متوفر الآن، جرّب إعادة تشغيل التطبيق أو اختر ملف صوتي.',
       AppStrings.recordingStartFailed: 'تعذر بدء التسجيل',
@@ -384,14 +411,14 @@ class AppTranslations extends Translations {
       AppStrings.couldNotCompleteRequest: 'تعذر إتمام الطلب. حاول مرة أخرى.',
       AppStrings.more: 'المزيد',
       AppStrings.appearance: 'المظهر',
-      AppStrings.reviews : 'التقييمات'
-    }, 
+      AppStrings.reviews: 'التقييمات',
+    },
     'en_US': {
-
       AppStrings.artisan: '(Artisan)',
       AppStrings.appearance: 'Appearance',
       AppStrings.passwordUpdated: 'Password updated successfully',
-      AppStrings.couldNotCompleteRequest: 'Could not complete the request. Please try again.',
+      AppStrings.couldNotCompleteRequest:
+          'Could not complete the request. Please try again.',
       AppStrings.verifyCodeSent: 'Verification code sent to your email',
       AppStrings.verifySuccess: 'Account verified successfully',
       AppStrings.createAccountSuccess: 'Account created successfully',
@@ -467,8 +494,7 @@ class AppTranslations extends Translations {
       AppStrings.portfolioImageTooLarge: 'Image is too large',
       AppStrings.portfolioReadImageFailed: 'Failed to read image',
       AppStrings.portfolioSelectAtLeastOne: 'Select at least one image',
-      AppStrings.invalidCardNumber:
-          'Invalid card number. Please check it.',
+      AppStrings.invalidCardNumber: 'Invalid card number. Please check it.',
       AppStrings.cardSavedMock: 'Card saved successfully (Mock).',
       AppStrings.unknownCustomer: 'Unknown customer',
       AppStrings.unknownService: 'Unknown service',
@@ -541,7 +567,8 @@ class AppTranslations extends Translations {
       AppStrings.yourReply: 'Your reply',
       AppStrings.reviewNoComment: 'No comment',
       AppStrings.reviewsEmptyTitle: 'No reviews yet',
-      AppStrings.reviewsEmptySubtitle: 'Pull to refresh when new reviews arrive.',
+      AppStrings.reviewsEmptySubtitle:
+          'Pull to refresh when new reviews arrive.',
       AppStrings.reviewsLoadFailed: 'Failed to load reviews.',
       AppStrings.reviewReplyFailed: 'Failed to reply to review.',
       AppStrings.replyHint: 'Write a quick reply for the customer',
@@ -663,7 +690,8 @@ class AppTranslations extends Translations {
       AppStrings.kycUseCamera: 'Use camera',
       AppStrings.kycUseGallery: 'Choose from gallery',
       AppStrings.kycNoImageSelected: 'No image selected yet',
-      AppStrings.kycMissingIdImages: 'Please upload both front and back ID images.',
+      AppStrings.kycMissingIdImages:
+          'Please upload both front and back ID images.',
       AppStrings.kycMissingSelfie: 'Please capture a selfie before uploading.',
       AppStrings.kycVerificationPassed: 'Identity matched successfully.',
       AppStrings.kycVerificationFailed:
@@ -683,10 +711,8 @@ class AppTranslations extends Translations {
       AppStrings.kycProblemUnknown: 'We need another verification attempt',
       AppStrings.kycAttemptsLimitReached:
           'You have reached the maximum verification attempts.',
-      AppStrings.kycRetryCooldown:
-          'You can retry again in @seconds seconds.',
-      AppStrings.kycRetryAvailableAt:
-          'You can try again at @time.',
+      AppStrings.kycRetryCooldown: 'You can retry again in @seconds seconds.',
+      AppStrings.kycRetryAvailableAt: 'You can try again at @time.',
       AppStrings.kycAccessBlocked:
           'Complete identity verification before using this feature.',
       AppStrings.kycValidationError:
@@ -703,6 +729,34 @@ class AppTranslations extends Translations {
           'Your session expired. Please sign in again to continue.',
       AppStrings.kycCameraPermissionDenied:
           'Camera or photo permission is required to continue verification.',
+      AppStrings.kycCameraOpenFailed:
+          'Could not open the camera right now. Try again or use the gallery.',
+      AppStrings.kycInvalidSelfieImage:
+          'The selfie must contain one clear face looking at the camera.',
+      AppStrings.kycReadyToUpload: 'Ready to upload',
+      AppStrings.kycDocumentGuide:
+          'Keep the whole ID inside the frame with strong light and no crop.',
+      AppStrings.kycSelfieGuide:
+          'Keep your face inside the circle, look at the camera, and avoid filters.',
+      AppStrings.kycPreviewDocument: 'Review the ID before upload',
+      AppStrings.kycPreviewSelfie: 'Review the selfie before upload',
+      AppStrings.kycCapturePhoto: 'Capture photo',
+      AppStrings.kycRetakePhoto: 'Retake',
+      AppStrings.kycUseThisPhoto: 'Use this photo',
+      AppStrings.kycCameraPositionHint:
+          'Align the card inside the frame before capture',
+      AppStrings.kycCameraFaceHint:
+          'Hold the phone at eye level with a calm background',
+      AppStrings.kycRequiredImagesTitle: 'Required images',
+      AppStrings.kycDocumentsReadyStatus: '@count of 2 ready',
+      AppStrings.kycCaptureChecklistTitle: 'Before upload',
+      AppStrings.kycCaptureChecklistBody:
+          'Capture the full ID inside the frame with no glare and clear details on both sides.',
+      AppStrings.kycAdjustDocumentCrop:
+          'Move and zoom the image until the card fills the frame.',
+      AppStrings.kycCropCoverageReady: 'The card area is ready to crop.',
+      AppStrings.kycFrontSideShort: 'Front side',
+      AppStrings.kycBackSideShort: 'Back side',
       AppStrings.kycCategoryIdBlurry: 'ID image is blurry',
       AppStrings.kycCategoryIdInvalid: 'ID is invalid or incomplete',
       AppStrings.kycCategoryFaceMismatch: 'Face does not match the ID',

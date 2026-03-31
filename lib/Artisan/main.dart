@@ -66,7 +66,10 @@ Future<void> ensureArtisanInitialized() async {
     }
     await initService();
     await GetStorage.init();
-    Get.put(TokenStorage(), permanent: true, tag: 'artisan');
+    final tokenStorage = Get.isRegistered<TokenStorage>(tag: 'artisan')
+        ? Get.find<TokenStorage>(tag: 'artisan')
+        : Get.put(TokenStorage(), permanent: true, tag: 'artisan');
+    await tokenStorage.init();
     if (!Get.isRegistered<FcmRepository>()) {
       Get.put(FcmRepository(), permanent: true);
     }
@@ -115,6 +118,7 @@ Future initService() async {
 
 Future<String> resolveArtisanInitialRoute() async {
   final storage = Get.find<TokenStorage>(tag: 'artisan');
+  await storage.init();
   final token = storage.accessToken;
   if (token != null && token.isNotEmpty && !storage.loggedOut) {
     final prefs = AppPrefs();
@@ -150,17 +154,17 @@ Future<String> resolveArtisanInitialRoute() async {
 
 class ArtisanApp extends StatelessWidget {
   ArtisanApp({super.key, String? initialRoute})
-      : initialRoute = initialRoute ?? AppRoutes.login,
-        themeController = _findOrPut<ThemeController>(
-          () => ThemeController(),
-          tag: 'artisan',
-          permanent: true,
-        ),
-        localeController = _findOrPut<LocaleController>(
-          () => LocaleController(),
-          tag: 'artisan',
-          permanent: true,
-        );
+    : initialRoute = initialRoute ?? AppRoutes.login,
+      themeController = _findOrPut<ThemeController>(
+        () => ThemeController(),
+        tag: 'artisan',
+        permanent: true,
+      ),
+      localeController = _findOrPut<LocaleController>(
+        () => LocaleController(),
+        tag: 'artisan',
+        permanent: true,
+      );
 
   final String initialRoute;
 
@@ -178,8 +182,9 @@ class ArtisanApp extends StatelessWidget {
         translations: AppTranslations(),
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
-        themeMode:
-            themeController.isDark.value ? ThemeMode.dark : ThemeMode.light,
+        themeMode: themeController.isDark.value
+            ? ThemeMode.dark
+            : ThemeMode.light,
         locale: localeController.locale.value,
         fallbackLocale: const Locale('ar', 'EG'),
         supportedLocales: const [Locale('ar', 'EG'), Locale('en', 'US')],

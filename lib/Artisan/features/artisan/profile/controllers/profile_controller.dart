@@ -75,8 +75,9 @@ class ProfileController extends GetxController {
 
       try {
         final completionResponse = await _api.profileCompletion();
-        final completionData =
-            ApiClient.instance.unwrapData(completionResponse);
+        final completionData = ApiClient.instance.unwrapData(
+          completionResponse,
+        );
         if (completionData is Map<String, dynamic>) {
           if (completionData.containsKey('profileCompletion')) {
             profileData['profileCompletion'] =
@@ -86,8 +87,7 @@ class ProfileController extends GetxController {
             profileData['missingFields'] = completionData['missingFields'];
           }
           if (completionData.containsKey('isCompleted')) {
-            profileData['isProfileCompleted'] =
-                completionData['isCompleted'];
+            profileData['isProfileCompleted'] = completionData['isCompleted'];
           }
         }
       } catch (_) {
@@ -111,10 +111,14 @@ class ProfileController extends GetxController {
     }
   }
 
-  Future<void> updateProfile(Map<String, dynamic> payload) async {
+  Future<bool> updateProfile(Map<String, dynamic> payload) async {
     updating.value = true;
     try {
       final data = Map<String, dynamic>.from(payload);
+      data.removeWhere(
+        (_, value) =>
+            value == null || (value is String && value.trim().isEmpty),
+      );
       final avatar = data.remove('avatar');
 
       if (avatar is String && avatar.isNotEmpty) {
@@ -134,8 +138,10 @@ class ProfileController extends GetxController {
       }
       await fetchProfile();
       _showSnack(AppStrings.profileUpdated.tr, Colors.green);
+      return true;
     } catch (e) {
       _handleError(e);
+      return false;
     } finally {
       updating.value = false;
     }
@@ -156,7 +162,7 @@ class ProfileController extends GetxController {
     }
   }
 
-Future<void> toggleOnline(bool online, {DateTime? unavailableUntil}) async {
+  Future<void> toggleOnline(bool online, {DateTime? unavailableUntil}) async {
     if (togglingStatus.value) return;
 
     togglingStatus.value = true;
@@ -190,7 +196,6 @@ Future<void> toggleOnline(bool online, {DateTime? unavailableUntil}) async {
       togglingStatus.value = false;
     }
   }
-
 
   Future<void> setLocation(double lat, double lng) async {
     updating.value = true;
@@ -248,8 +253,9 @@ Future<void> toggleOnline(bool online, {DateTime? unavailableUntil}) async {
   }
 
   void _showSnack(String message, Color color) {
-    final type =
-        color == Colors.redAccent ? SnackBarType.error : SnackBarType.info;
+    final type = color == Colors.redAccent
+        ? SnackBarType.error
+        : SnackBarType.info;
     AppSnackBar.show(
       type == SnackBarType.error ? AppStrings.error.tr : AppStrings.info.tr,
       message,
@@ -257,4 +263,3 @@ Future<void> toggleOnline(bool online, {DateTime? unavailableUntil}) async {
     );
   }
 }
-

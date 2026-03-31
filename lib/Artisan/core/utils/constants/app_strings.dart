@@ -21,7 +21,6 @@ class AppStrings {
   static const String continue_ = "continue";
   static const kOnboardingDoneKey = 'onboarding_done';
 
-
   static const artisan = 'Artisan';
 
   static const String login = "login";
@@ -98,8 +97,7 @@ class AppStrings {
   static const String portfolioEmptyImage = 'portfolioEmptyImage';
   static const String portfolioImageTooLarge = 'portfolioImageTooLarge';
   static const String portfolioReadImageFailed = 'portfolioReadImageFailed';
-  static const String portfolioSelectAtLeastOne =
-      'portfolioSelectAtLeastOne';
+  static const String portfolioSelectAtLeastOne = 'portfolioSelectAtLeastOne';
   static const String invalidCardNumber = 'invalidCardNumber';
   static const String cardSavedMock = 'cardSavedMock';
   static const String unknownCustomer = 'unknownCustomer';
@@ -301,6 +299,26 @@ class AppStrings {
   static const String kycTimeoutError = 'kycTimeoutError';
   static const String kycSessionExpired = 'kycSessionExpired';
   static const String kycCameraPermissionDenied = 'kycCameraPermissionDenied';
+  static const String kycCameraOpenFailed = 'kycCameraOpenFailed';
+  static const String kycInvalidSelfieImage = 'kycInvalidSelfieImage';
+  static const String kycReadyToUpload = 'kycReadyToUpload';
+  static const String kycDocumentGuide = 'kycDocumentGuide';
+  static const String kycSelfieGuide = 'kycSelfieGuide';
+  static const String kycPreviewDocument = 'kycPreviewDocument';
+  static const String kycPreviewSelfie = 'kycPreviewSelfie';
+  static const String kycCapturePhoto = 'kycCapturePhoto';
+  static const String kycRetakePhoto = 'kycRetakePhoto';
+  static const String kycUseThisPhoto = 'kycUseThisPhoto';
+  static const String kycCameraPositionHint = 'kycCameraPositionHint';
+  static const String kycCameraFaceHint = 'kycCameraFaceHint';
+  static const String kycRequiredImagesTitle = 'kycRequiredImagesTitle';
+  static const String kycDocumentsReadyStatus = 'kycDocumentsReadyStatus';
+  static const String kycCaptureChecklistTitle = 'kycCaptureChecklistTitle';
+  static const String kycCaptureChecklistBody = 'kycCaptureChecklistBody';
+  static const String kycAdjustDocumentCrop = 'kycAdjustDocumentCrop';
+  static const String kycCropCoverageReady = 'kycCropCoverageReady';
+  static const String kycFrontSideShort = 'kycFrontSideShort';
+  static const String kycBackSideShort = 'kycBackSideShort';
   static const String kycCategoryIdBlurry = 'kycCategoryIdBlurry';
   static const String kycCategoryIdInvalid = 'kycCategoryIdInvalid';
   static const String kycCategoryFaceMismatch = 'kycCategoryFaceMismatch';

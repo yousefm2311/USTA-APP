@@ -3,9 +3,10 @@ import 'package:get/get.dart';
 import 'package:usta/Artisan/core/utils/constants/app_colors.dart';
 import 'package:usta/Artisan/core/utils/constants/app_strings.dart';
 import 'package:usta/Artisan/features/verification/controllers/artisan_verification_controller.dart';
-import 'package:usta/Artisan/features/verification/views/artisan_verification_widgets.dart';
+import 'package:usta/Artisan/features/verification/views/artisan_verification_ui.dart';
 
-class ArtisanVerificationStatusView extends GetView<ArtisanVerificationController> {
+class ArtisanVerificationStatusView
+    extends GetView<ArtisanVerificationController> {
   const ArtisanVerificationStatusView({super.key});
 
   @override
@@ -58,17 +59,17 @@ class ArtisanVerificationStatusView extends GetView<ArtisanVerificationControlle
               const SizedBox(height: 18),
               Text(
                 headline,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 10),
               Text(
                 description,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      height: 1.6,
-                      color: AppColors.textSecondary,
-                    ),
+                  height: 1.6,
+                  color: AppColors.textSecondary,
+                ),
               ),
               if (!isVerified) ...[
                 const SizedBox(height: 16),
@@ -84,38 +85,25 @@ class ArtisanVerificationStatusView extends GetView<ArtisanVerificationControlle
                       'count': '$remaining',
                     }),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
               const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: controller.continueFromStatus,
-                  child: Text(
-                    isVerified
-                        ? AppStrings.kycGoToHome.tr
-                        : AppStrings.kycRefreshStatus.tr,
-                  ),
-                ),
+              VerificationPrimaryButton(
+                label: isVerified
+                    ? AppStrings.kycGoToHome.tr
+                    : AppStrings.kycRefreshStatus.tr,
+                onPressed: controller.continueFromStatus,
               ),
               const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: controller.loadingStatus.value
-                      ? null
-                      : controller.refreshStatus,
-                  child: controller.loadingStatus.value
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(AppStrings.kycRefreshStatus.tr),
-                ),
+              VerificationSecondaryButton(
+                label: AppStrings.kycRefreshStatus.tr,
+                loading: controller.loadingStatus.value,
+                onPressed: controller.loadingStatus.value
+                    ? null
+                    : controller.refreshStatus,
               ),
             ],
           ),

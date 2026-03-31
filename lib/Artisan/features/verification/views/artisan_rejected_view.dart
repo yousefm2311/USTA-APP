@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:usta/Artisan/core/utils/constants/app_colors.dart';
 import 'package:usta/Artisan/core/utils/constants/app_strings.dart';
 import 'package:usta/Artisan/features/verification/controllers/artisan_verification_controller.dart';
-import 'package:usta/Artisan/features/verification/views/artisan_verification_widgets.dart';
+import 'package:usta/Artisan/features/verification/views/artisan_verification_ui.dart';
 
 class ArtisanVerificationRejectedView
     extends GetView<ArtisanVerificationController> {
@@ -19,7 +19,8 @@ class ArtisanVerificationRejectedView
         final canRetry = controller.canRetry && !controller.isCooldownActive;
         final retryAction = controller.retryAction;
         final problemType = controller.problemType;
-        final reason = controller.failureReason ?? AppStrings.kycVerificationFailed.tr;
+        final reason =
+            controller.failureReason ?? AppStrings.kycVerificationFailed.tr;
         final categoryLabel = controller.rejectionCategoryLabel();
 
         String issueLabel;
@@ -61,17 +62,17 @@ class ArtisanVerificationRejectedView
               const SizedBox(height: 18),
               Text(
                 AppStrings.kycFailedHeadline.tr,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 10),
               Text(
                 reason,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                      height: 1.6,
-                    ),
+                  color: AppColors.textSecondary,
+                  height: 1.6,
+                ),
               ),
               const SizedBox(height: 16),
               Container(
@@ -87,15 +88,15 @@ class ArtisanVerificationRejectedView
                     Text(
                       AppStrings.kycIssueTypeLabel.tr,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       categoryLabel.isNotEmpty ? categoryLabel : issueLabel,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -107,8 +108,8 @@ class ArtisanVerificationRejectedView
                               'count': '${controller.attemptsRemaining}',
                             }),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     if (controller.isCooldownActive &&
                         controller.retryAvailabilityLabel().isNotEmpty) ...[
@@ -118,9 +119,9 @@ class ArtisanVerificationRejectedView
                           'time': controller.retryAvailabilityLabel(),
                         }),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ],
@@ -128,48 +129,31 @@ class ArtisanVerificationRejectedView
               ),
               const SizedBox(height: 18),
               if (retryAction == 'documents' || retryAction == 'both')
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: canRetry ? controller.retryDocuments : null,
-                    child: Text(AppStrings.kycRetryDocuments.tr),
-                  ),
+                VerificationPrimaryButton(
+                  label: AppStrings.kycRetryDocuments.tr,
+                  onPressed: canRetry ? controller.retryDocuments : null,
                 ),
               if (retryAction == 'documents' || retryAction == 'both')
                 const SizedBox(height: 10),
               if (retryAction == 'selfie' || retryAction == 'both')
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: canRetry ? controller.retrySelfie : null,
-                    child: Text(AppStrings.kycRetrySelfie.tr),
-                  ),
+                VerificationSecondaryButton(
+                  label: AppStrings.kycRetrySelfie.tr,
+                  onPressed: canRetry ? controller.retrySelfie : null,
                 ),
               if (retryAction == 'both') ...[
                 const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: canRetry ? controller.continueFromRejected : null,
-                    child: Text(AppStrings.kycRetryBoth.tr),
-                  ),
+                VerificationSecondaryButton(
+                  label: AppStrings.kycRetryBoth.tr,
+                  onPressed: canRetry ? controller.continueFromRejected : null,
                 ),
               ],
               const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: controller.loadingStatus.value
-                      ? null
-                      : controller.refreshStatus,
-                  child: controller.loadingStatus.value
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(AppStrings.kycRefreshStatus.tr),
-                ),
+              VerificationSecondaryButton(
+                label: AppStrings.kycRefreshStatus.tr,
+                loading: controller.loadingStatus.value,
+                onPressed: controller.loadingStatus.value
+                    ? null
+                    : controller.refreshStatus,
               ),
             ],
           ),

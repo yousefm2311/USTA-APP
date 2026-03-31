@@ -2,11 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:usta/Artisan/core/utils/constants/app_strings.dart';
+import 'package:usta/Artisan/core/utils/routes/routes.dart';
 import 'package:usta/Artisan/features/verification/controllers/artisan_verification_controller.dart';
-import 'package:usta/Artisan/features/verification/views/artisan_verification_widgets.dart';
+import 'package:usta/Artisan/features/verification/views/artisan_verification_camera_view.dart';
+import 'package:usta/Artisan/features/verification/views/artisan_verification_ui.dart';
 
-class ArtisanSelfieVerificationView extends GetView<ArtisanVerificationController> {
+class ArtisanSelfieVerificationView
+    extends GetView<ArtisanVerificationController> {
   const ArtisanSelfieVerificationView({super.key});
+
+  Future<void> _captureSelfie() async {
+    final result = await Get.toNamed(
+      AppRoutes.artisanVerificationCameraView,
+      arguments: {
+        'mode': VerificationCaptureMode.selfie,
+        'screenTitle': AppStrings.kycSelfieCaptureLabel.tr,
+        'screenHint': AppStrings.kycSelfieHint.tr,
+        'frameLabel': AppStrings.kycSelfieCaptureLabel.tr,
+      },
+    );
+    final file = result is XFile ? result : null;
+    await controller.setSelfieFile(file);
+  }
+
+  Future<void> _pickSelfieFromGallery() async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 88,
+    );
+    await controller.setSelfieFile(file);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,61 +44,41 @@ class ArtisanSelfieVerificationView extends GetView<ArtisanVerificationControlle
         () => Column(
           children: [
             if (!controller.canRetry || controller.isCooldownActive) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF4E5),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Text(
-                  controller.isCooldownActive
-                      ? AppStrings.kycRetryCooldown.trParams({
-                          'seconds': '${controller.cooldownRemaining}',
-                        })
-                      : AppStrings.kycAttemptsLimitReached.tr,
-                ),
-              ),
-              if (controller.isCooldownActive &&
-                  controller.retryAvailabilityLabel().isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      AppStrings.kycRetryAvailableAt.trParams({
+              VerificationStatusBanner(
+                icon: Icons.warning_amber_rounded,
+                message: controller.isCooldownActive
+                    ? AppStrings.kycRetryCooldown.trParams({
+                        'seconds': '${controller.cooldownRemaining}',
+                      })
+                    : AppStrings.kycAttemptsLimitReached.tr,
+                secondaryMessage:
+                    controller.isCooldownActive &&
+                        controller.retryAvailabilityLabel().isNotEmpty
+                    ? AppStrings.kycRetryAvailableAt.trParams({
                         'time': controller.retryAvailabilityLabel(),
-                      }),
-                    ),
-                  ),
-                ),
+                      })
+                    : null,
+              ),
             ],
             VerificationImageCard(
               title: AppStrings.kycSelfieCaptureLabel.tr,
               description: AppStrings.kycSelfieHint.tr,
-              filePath: controller.selfie.value?.path,
+              previewBytes: controller.selfieBytes.value,
               icon: Icons.face_outlined,
-              onPickCamera: () => controller.pickSelfie(ImageSource.camera),
-              onPickGallery: () => controller.pickSelfie(ImageSource.gallery),
+              previewType: VerificationPreviewType.selfie,
+              onPickCamera: _captureSelfie,
+              onPickGallery: _pickSelfieFromGallery,
             ),
             const SizedBox(height: 18),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: controller.uploadingSelfie.value ||
-                        !controller.canRetry ||
-                        controller.isCooldownActive
-                    ? null
-                    : controller.submitSelfie,
-                child: controller.uploadingSelfie.value
-                    ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(AppStrings.kycUploadSelfieButton.tr),
-              ),
+            VerificationPrimaryButton(
+              label: AppStrings.kycUploadSelfieButton.tr,
+              loading: controller.uploadingSelfie.value,
+              onPressed:
+                  controller.uploadingSelfie.value ||
+                      !controller.canRetry ||
+                      controller.isCooldownActive
+                  ? null
+                  : controller.submitSelfie,
             ),
           ],
         ),

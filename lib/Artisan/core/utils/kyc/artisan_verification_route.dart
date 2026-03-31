@@ -20,10 +20,7 @@ Map<String, dynamic>? _asMap(dynamic value) {
   return null;
 }
 
-String? _extractString(
-  Map<String, dynamic>? map,
-  Iterable<String> keys,
-) {
+String? _extractString(Map<String, dynamic>? map, Iterable<String> keys) {
   if (map == null) return null;
   for (final key in keys) {
     final value = map[key];
@@ -48,9 +45,7 @@ Map<String, dynamic>? decodeCachedArtisanProfile(String? raw) {
 }
 
 String extractArtisanVerificationStatus(Map<String, dynamic>? profile) {
-  final status = _extractString(profile, [
-    'verificationStatus',
-  ])?.toLowerCase();
+  final status = _extractString(profile, ['verificationStatus'])?.toLowerCase();
   switch (status) {
     case 'documents_uploaded':
     case 'selfie_uploaded':
@@ -99,9 +94,13 @@ bool isArtisanRouteAllowedForVerificationStatus(
 
   switch (status) {
     case 'pending_documents':
-      return route == AppRoutes.artisanVerificationIdView;
+      return route == AppRoutes.artisanVerificationIdView ||
+          route == AppRoutes.artisanVerificationCameraView ||
+          route == AppRoutes.artisanVerificationDocumentCropView;
     case 'documents_uploaded':
       return route == AppRoutes.artisanVerificationIdView ||
+          route == AppRoutes.artisanVerificationCameraView ||
+          route == AppRoutes.artisanVerificationDocumentCropView ||
           route == AppRoutes.artisanVerificationSelfieView;
     case 'selfie_uploaded':
     case 'under_review':
@@ -109,6 +108,8 @@ bool isArtisanRouteAllowedForVerificationStatus(
     case 'rejected':
       return route == AppRoutes.artisanVerificationRejectedView ||
           route == AppRoutes.artisanVerificationIdView ||
+          route == AppRoutes.artisanVerificationCameraView ||
+          route == AppRoutes.artisanVerificationDocumentCropView ||
           route == AppRoutes.artisanVerificationSelfieView;
     default:
       return false;
