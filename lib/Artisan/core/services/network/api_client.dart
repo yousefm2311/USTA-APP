@@ -201,13 +201,12 @@
 //   }
 // }
 
-
-
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:usta/app/services/backend_status_service.dart';
 import 'package:usta/Artisan/core/services/auth_service.dart';
 import 'package:usta/Artisan/core/utils/constants/api_endpoints.dart';
 import 'package:usta/Artisan/core/services/network/auth_retry_interceptor.dart';
@@ -218,12 +217,7 @@ class ApiException implements Exception {
   final String? code;
   final Map<String, dynamic>? details;
 
-  ApiException(
-    this.message, {
-    this.statusCode,
-    this.code,
-    this.details,
-  });
+  ApiException(this.message, {this.statusCode, this.code, this.details});
 
   @override
   String toString() => message;
@@ -237,11 +231,16 @@ class ApiClient extends GetxService {
 
   late final Dio _dio;
   late final AuthService _authService;
+  late final BackendStatusService _backendStatus;
 
   @override
   Future<void> onInit() async {
     super.onInit();
     _authService = Get.find<AuthService>();
+    _backendStatus = Get.isRegistered<BackendStatusService>()
+        ? Get.find<BackendStatusService>()
+        : Get.put(BackendStatusService(), permanent: true);
+    _backendStatus.configure(baseUrl: ApiEndpoints.baseUrl);
 
     _dio = Dio(
       BaseOptions(
@@ -359,21 +358,49 @@ class ApiClient extends GetxService {
         queryParameters: queryParameters,
         options: (options ?? Options()).copyWith(method: method),
       );
+      final contentType = response.headers.value('content-type');
+      if (looksLikeServerHtmlPayload(response.data, contentType: contentType)) {
+        await _backendStatus.reportFailure(
+          statusCode: response.statusCode,
+          data: response.data,
+          contentType: contentType,
+        );
+        throw ApiException(
+          'الخدمة غير متاحة مؤقتًا، حاول مرة أخرى بعد قليل',
+          statusCode: response.statusCode,
+          code: 'server_unavailable',
+          details: {'contentType': contentType},
+        );
+      }
+      _backendStatus.markAvailable();
       return response.data ?? {};
     } on DioException catch (error) {
+      final contentType = error.response?.headers.value('content-type');
+      await _backendStatus.reportFailure(
+        statusCode: error.response?.statusCode,
+        data: error.response?.data,
+        contentType: contentType,
+        error: error,
+      );
+      if (looksLikeServerHtmlPayload(
+            error.response?.data,
+            contentType: contentType,
+          ) ||
+          isBackendUnavailableStatus(error.response?.statusCode)) {
+        throw ApiException(
+          'الخدمة غير متاحة مؤقتًا، حاول مرة أخرى بعد قليل',
+          statusCode: error.response?.statusCode,
+          code: 'server_unavailable',
+          details: _toDetailsMap(error.response?.data),
+        );
+      }
       if (error.type == DioExceptionType.connectionTimeout ||
           error.type == DioExceptionType.receiveTimeout ||
           error.type == DioExceptionType.sendTimeout) {
-        throw ApiException(
-          'Request timed out',
-          code: 'network_timeout',
-        );
+        throw ApiException('Request timed out', code: 'network_timeout');
       }
       if (error.type == DioExceptionType.connectionError) {
-        throw ApiException(
-          'Network unavailable',
-          code: 'network_unavailable',
-        );
+        throw ApiException('Network unavailable', code: 'network_unavailable');
       }
       final payload = _extractErrorPayload(error);
       throw ApiException(
@@ -387,10 +414,15 @@ class ApiClient extends GetxService {
     }
   }
 
+  Map<String, dynamic>? _toDetailsMap(dynamic data) {
+    if (data is Map<String, dynamic>) return data;
+    if (data is Map) return Map<String, dynamic>.from(data);
+    return null;
+  }
+
   /// ⭐ نفس formatter اللي عندك
-  ({String message, String? code, Map<String, dynamic>? details}) _extractErrorPayload(
-    DioException error,
-  ) {
+  ({String message, String? code, Map<String, dynamic>? details})
+  _extractErrorPayload(DioException error) {
     final response = error.response;
     String? extracted;
     String? code;
@@ -419,15 +451,11 @@ class ApiClient extends GetxService {
       extracted = code != null
           ? 'Request failed ($code)'
           : statusCode != null
-              ? 'Request failed ($statusCode)'
-              : 'Unexpected error, please try again.';
+          ? 'Request failed ($statusCode)'
+          : 'Unexpected error, please try again.';
     }
 
-    return (
-      message: extracted,
-      code: code,
-      details: details,
-    );
+    return (message: extracted, code: code, details: details);
   }
 
   /// compatibility

@@ -7,7 +7,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:usta/app/app_mode_controller.dart';
+import 'package:usta/app/services/backend_status_service.dart';
 import 'package:usta/app/app_switcher.dart';
+import 'package:usta/app/widgets/server_unavailable_overlay.dart';
 import 'package:usta/Artisan/core/services/fcm_service.dart';
 import 'package:usta/Artisan/core/realtime/realtime_lifecycle_service.dart';
 import 'package:usta/Artisan/core/services/auth_service.dart';
@@ -66,6 +68,9 @@ Future<void> ensureArtisanInitialized() async {
     }
     await initService();
     await GetStorage.init();
+    if (!Get.isRegistered<BackendStatusService>()) {
+      Get.put(BackendStatusService(), permanent: true);
+    }
     final tokenStorage = Get.isRegistered<TokenStorage>(tag: 'artisan')
         ? Get.find<TokenStorage>(tag: 'artisan')
         : Get.put(TokenStorage(), permanent: true, tag: 'artisan');
@@ -200,6 +205,30 @@ class ArtisanApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
+        builder: (context, child) {
+          final content = child ?? const SizedBox.shrink();
+          if (!Get.isRegistered<BackendStatusService>()) {
+            return content;
+          }
+          final backendStatus = Get.find<BackendStatusService>();
+          return Obx(() {
+            if (!backendStatus.isUnavailable.value) return content;
+            return Stack(
+              children: [
+                content,
+                const Positioned.fill(
+                  child: ModalBarrier(
+                    dismissible: false,
+                    color: Colors.black38,
+                  ),
+                ),
+                Positioned.fill(
+                  child: ServerUnavailableOverlay(service: backendStatus),
+                ),
+              ],
+            );
+          });
+        },
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:usta/app/services/backend_status_service.dart';
 import 'package:usta/Customer/core/config/app_config.dart';
 import 'package:usta/Customer/core/realtime/realtime_controller.dart';
 import 'package:usta/Customer/core/services/connectivity/connectivity_service.dart';
@@ -20,6 +21,7 @@ import 'package:usta/app/app_mode_controller.dart';
 class ApiClient extends GetxService {
   late final Dio _dio;
   final TokenStorage _storage = Get.find<TokenStorage>(tag: 'customer');
+  late final BackendStatusService _backendStatus;
 
   bool _isRefreshing = false;
   Completer<_RefreshResult>? _refreshCompleter;
@@ -32,6 +34,10 @@ class ApiClient extends GetxService {
   @override
   void onInit() {
     super.onInit();
+    _backendStatus = Get.isRegistered<BackendStatusService>()
+        ? Get.find<BackendStatusService>()
+        : Get.put(BackendStatusService(), permanent: true);
+    _backendStatus.configure(baseUrl: ApiEndpoints.baseUrl);
     final config = AppConfig.instance;
     _dio = Dio(
       BaseOptions(
@@ -272,6 +278,25 @@ class ApiClient extends GetxService {
     String message = 'Something went wrong';
 
     if (dioError != null) {
+      final contentType = dioError.response?.headers.value('content-type');
+      if (looksLikeServerHtmlPayload(
+        dioError.response?.data,
+        contentType: contentType,
+      )) {
+        () async {
+          await _backendStatus.reportFailure(
+            statusCode: dioError?.response?.statusCode,
+            data: dioError?.response?.data,
+            contentType: contentType,
+            error: dioError,
+          );
+        }();
+        return ApiException(
+          message: 'الخدمة غير متاحة مؤقتًا، حاول مرة أخرى بعد قليل'.tr,
+          statusCode: dioError.response?.statusCode,
+          details: dioError.response?.data,
+        );
+      }
       if (dioError.response?.data is Map<String, dynamic>) {
         final data = dioError.response!.data as Map<String, dynamic>;
         final serverMessage = data['message'] ?? data['error'] ?? data['msg'];
@@ -290,9 +315,15 @@ class ApiClient extends GetxService {
           dioError.type == DioExceptionType.sendTimeout) {
         message = 'Connection timed out, please try again';
         _markOffline();
+        () async {
+          await _backendStatus.reportFailure(error: dioError);
+        }();
       } else if (dioError.type == DioExceptionType.connectionError) {
         message = 'Network connection failed, please check your internet';
         _markOffline();
+        () async {
+          await _backendStatus.reportFailure(error: dioError);
+        }();
       } else if (dioError.type == DioExceptionType.unknown) {
         final err = dioError.error;
         if (err is HandshakeException) {
@@ -301,6 +332,9 @@ class ApiClient extends GetxService {
         } else if (err is SocketException) {
           message = 'Network connection failed, please check your internet';
           _markOffline();
+          () async {
+            await _backendStatus.reportFailure(error: dioError);
+          }();
         }
       }
     } else if (error is Exception) {
@@ -466,7 +500,24 @@ class ApiClient extends GetxService {
 
   void _throwIfFailed(Response response) {
     final status = response.statusCode ?? 0;
-    if (status >= 200 && status < 300) return;
+    final contentType = response.headers.value('content-type');
+    if (status >= 200 && status < 300) {
+      if (looksLikeServerHtmlPayload(response.data, contentType: contentType)) {
+        () async {
+          await _backendStatus.reportFailure(
+            statusCode: status,
+            data: response.data,
+            contentType: contentType,
+          );
+        }();
+        throw ApiException(
+          message: 'الخدمة غير متاحة مؤقتًا، حاول مرة أخرى بعد قليل'.tr,
+          statusCode: status,
+          details: response.data,
+        );
+      }
+      return;
+    }
     if (status == 401) {
       throw DioException(
         requestOptions: response.requestOptions,
@@ -488,11 +539,20 @@ class ApiClient extends GetxService {
       _handleAuthFailure(error, request: response.requestOptions);
       throw error;
     }
+    () async {
+      await _backendStatus.reportFailure(
+        statusCode: status,
+        data: response.data,
+        contentType: contentType,
+      );
+    }();
     final error = ApiException(
       message: response.data is Map<String, dynamic>
           ? (response.data['message'] ??
                 response.data['error'] ??
-                'Request failed')
+                (isBackendUnavailableStatus(status)
+                    ? 'الخدمة غير متاحة مؤقتًا، حاول مرة أخرى بعد قليل'.tr
+                    : 'Request failed'))
           : 'Request failed',
       statusCode: status,
       details: response.data,
@@ -597,6 +657,7 @@ class ApiClient extends GetxService {
   bool _pendingLoginNavigation = false;
 
   void _markOnline() {
+    _backendStatus.markAvailable();
     if (!Get.isRegistered<ConnectivityService>(tag: 'customer')) return;
     final svc = Get.find<ConnectivityService>(tag: 'customer');
     if (!svc.isOnline.value) {

@@ -6,7 +6,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:usta/app/app_mode_controller.dart';
+import 'package:usta/app/services/backend_status_service.dart';
 import 'package:usta/app/app_switcher.dart';
+import 'package:usta/app/widgets/server_unavailable_overlay.dart';
 import 'package:usta/Customer/core/config/app_config.dart';
 import 'package:usta/Customer/core/services/connectivity/connectivity_service.dart';
 import 'package:usta/Customer/core/services/device_id_service.dart';
@@ -71,6 +73,9 @@ Future<void> ensureCustomerInitialized() async {
     if (!Get.isRegistered<ConnectivityService>(tag: 'customer')) {
       Get.put(ConnectivityService(), permanent: true, tag: 'customer');
     }
+    if (!Get.isRegistered<BackendStatusService>()) {
+      Get.put(BackendStatusService(), permanent: true);
+    }
     Get.put(ApiClient(), permanent: true, tag: 'customer');
 
     if (!Get.isRegistered<CustomerApi>()) {
@@ -118,19 +123,20 @@ Future<String> resolveCustomerInitialRoute() async {
   }
   return AppRoutes.login;
 }
+
 class CustomerApp extends StatelessWidget {
   CustomerApp({super.key, String? initialRoute})
-      : initialRoute = initialRoute ?? AppRoutes.login,
-        themeController = _findOrPut<ThemeController>(
-          () => ThemeController(),
-          tag: 'customer',
-          permanent: true,
-        ),
-        localeController = _findOrPut<LocaleController>(
-          () => LocaleController(),
-          tag: 'customer',
-          permanent: true,
-        );
+    : initialRoute = initialRoute ?? AppRoutes.login,
+      themeController = _findOrPut<ThemeController>(
+        () => ThemeController(),
+        tag: 'customer',
+        permanent: true,
+      ),
+      localeController = _findOrPut<LocaleController>(
+        () => LocaleController(),
+        tag: 'customer',
+        permanent: true,
+      );
 
   final String initialRoute;
 
@@ -165,8 +171,23 @@ class CustomerApp extends StatelessWidget {
             return content;
           }
           final service = Get.find<ConnectivityService>(tag: 'customer');
+          final backendStatus = Get.find<BackendStatusService>();
           return Obx(() {
-            if (service.isOnline.value) return content;
+            if (!service.isOnline.value) {
+              return Stack(
+                children: [
+                  content,
+                  Positioned.fill(
+                    child: ModalBarrier(
+                      dismissible: false,
+                      color: Colors.black38,
+                    ),
+                  ),
+                  Positioned.fill(child: NoInternetOverlay(service: service)),
+                ],
+              );
+            }
+            if (!backendStatus.isUnavailable.value) return content;
             return Stack(
               children: [
                 content,
@@ -177,7 +198,7 @@ class CustomerApp extends StatelessWidget {
                   ),
                 ),
                 Positioned.fill(
-                  child: NoInternetOverlay(service: service),
+                  child: ServerUnavailableOverlay(service: backendStatus),
                 ),
               ],
             );
@@ -187,6 +208,3 @@ class CustomerApp extends StatelessWidget {
     );
   }
 }
-
-
-
