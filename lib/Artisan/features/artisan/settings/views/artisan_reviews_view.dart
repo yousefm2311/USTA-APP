@@ -16,7 +16,9 @@ class ArtisanReviewsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(ArtisanReviewsController());
+    final controller = Get.isRegistered<ArtisanReviewsController>()
+        ? Get.find<ArtisanReviewsController>()
+        : Get.put(ArtisanReviewsController());
 
     return Scaffold(
       appBar: AppBar(
@@ -100,10 +102,9 @@ class ArtisanReviewsView extends StatelessWidget {
         child: LinearProgressIndicator(
           minHeight: 4,
           color: Theme.of(context).colorScheme.primary,
-          backgroundColor: Theme.of(context)
-              .colorScheme
-              .primary
-              .withOpacity(0.15),
+          backgroundColor: Theme.of(
+            context,
+          ).colorScheme.primary.withOpacity(0.15),
         ),
       ),
     );
@@ -241,8 +242,10 @@ class ArtisanReviewsView extends StatelessWidget {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.14),
                   borderRadius: BorderRadius.circular(12),
@@ -275,24 +278,14 @@ class ArtisanReviewsView extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           ...[5, 4, 3, 2, 1].map(
-            (star) => _ratingBar(
-              context,
-              star,
-              counts[star] ?? 0,
-              totalCount,
-            ),
+            (star) => _ratingBar(context, star, counts[star] ?? 0, totalCount),
           ),
         ],
       ),
     );
   }
 
-  Widget _ratingBar(
-    BuildContext context,
-    int stars,
-    int count,
-    int total,
-  ) {
+  Widget _ratingBar(BuildContext context, int stars, int count, int total) {
     final value = total > 0 ? count / total : 0.0;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -348,9 +341,9 @@ class ArtisanReviewsView extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             AppStrings.reviewsEmptyTitle.tr,
-            style: AppTextStyles.body(context).copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppTextStyles.body(
+              context,
+            ).copyWith(fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 6),
@@ -373,26 +366,22 @@ class ArtisanReviewsView extends StatelessWidget {
     final customer = review['customer'] is Map<String, dynamic>
         ? (review['customer'] as Map<String, dynamic>)
         : null;
-    final name = (review['customerName'] ??
-            review['reviewerName'] ??
-            review['customerName'] ??
-            customer?['name'] ??
-            customer?['fullName'] ??
-            AppStrings.reviewerNamePlaceholder.tr)
-        .toString();
-    final body = (review['comment'] ??
-            review['message'] ??
-            review['text'] ??
-            '')
-        .toString()
-        .trim();
+    final name =
+        (review['customerName'] ??
+                review['reviewerName'] ??
+                review['customerName'] ??
+                customer?['name'] ??
+                customer?['fullName'] ??
+                AppStrings.reviewerNamePlaceholder.tr)
+            .toString();
+    final body =
+        (review['comment'] ?? review['message'] ?? review['text'] ?? '')
+            .toString()
+            .trim();
     final rawDate = review['createdAt'] ?? review['repliedAt'];
     final dateLabel = _formatDate(rawDate);
     final ratingValue = _ratingValue(
-      review['rating'] ??
-          review['score'] ??
-          review['stars'] ??
-          review['value'],
+      review['rating'] ?? review['score'] ?? review['stars'] ?? review['value'],
     );
     final reply = (review['reply'] ?? review['artisanReply'] ?? '')
         .toString()
@@ -443,15 +432,12 @@ class ArtisanReviewsView extends StatelessWidget {
                   children: [
                     Text(
                       name,
-                      style: AppTextStyles.body(context).copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTextStyles.body(
+                        context,
+                      ).copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      dateLabel,
-                      style: AppTextStyles.caption(context),
-                    ),
+                    Text(dateLabel, style: AppTextStyles.caption(context)),
                   ],
                 ),
               ),
@@ -476,9 +462,9 @@ class ArtisanReviewsView extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             body.isNotEmpty ? body : AppStrings.reviewNoComment.tr,
-            style: AppTextStyles.small(context).copyWith(
-              color: scheme.onSurface.withOpacity(0.85),
-            ),
+            style: AppTextStyles.small(
+              context,
+            ).copyWith(color: scheme.onSurface.withOpacity(0.85)),
           ),
           if (email.isNotEmpty || phone.isNotEmpty) ...[
             const SizedBox(height: 10),
@@ -521,9 +507,9 @@ class ArtisanReviewsView extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     reply,
-                    style: AppTextStyles.small(context).copyWith(
-                      color: scheme.onSurface.withOpacity(0.9),
-                    ),
+                    style: AppTextStyles.small(
+                      context,
+                    ).copyWith(color: scheme.onSurface.withOpacity(0.9)),
                   ),
                 ],
               ),
@@ -532,8 +518,9 @@ class ArtisanReviewsView extends StatelessWidget {
           const SizedBox(height: 12),
           CustomMaterialButton(
             width: double.infinity,
-            text:
-                hasReply ? AppStrings.editReply.tr : AppStrings.replyReview.tr,
+            text: hasReply
+                ? AppStrings.editReply.tr
+                : AppStrings.replyReview.tr,
             onPressed: () => _showReplyDialog(context, review, controller),
             color: scheme.primary,
             textColor: Colors.white,
@@ -562,8 +549,9 @@ class ArtisanReviewsView extends StatelessWidget {
             children: [
               Text(
                 AppStrings.replyReview.tr,
-                style: AppTextStyles.body(context)
-                    .copyWith(fontWeight: FontWeight.bold),
+                style: AppTextStyles.body(
+                  context,
+                ).copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -594,8 +582,7 @@ class ArtisanReviewsView extends StatelessWidget {
                                     ?.toString();
                                 if (reviewId == null || reviewId.isEmpty)
                                   return;
-                                final success =
-                                    await controller.replyToReview(
+                                final success = await controller.replyToReview(
                                   reviewId,
                                   reply,
                                 );
@@ -628,9 +615,9 @@ class ArtisanReviewsView extends StatelessWidget {
     if (parsed == null) return raw.toString();
     final localeCode =
         Get.locale?.languageCode ?? Get.deviceLocale?.languageCode ?? 'en';
-    final formatted = DateFormat.yMMMd(localeCode).add_jm().format(
-          parsed.toLocal(),
-        );
+    final formatted = DateFormat.yMMMd(
+      localeCode,
+    ).add_jm().format(parsed.toLocal());
     return formatted;
   }
 

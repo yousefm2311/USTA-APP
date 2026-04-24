@@ -45,9 +45,9 @@ class _LoginViewState extends State<LoginView> {
       }
     }
     if (!mounted) return;
-    if (Get.currentRoute != '/ChooseUserTypeView') {
-      Get.to(() => const ChooseUserTypeView(fallbackMode: AppUserType.customer));
-    }
+    Get.offAll(
+      () => const ChooseUserTypeView(fallbackMode: AppUserType.customer),
+    );
   }
 
   @override

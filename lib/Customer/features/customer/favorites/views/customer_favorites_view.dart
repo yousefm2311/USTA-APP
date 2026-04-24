@@ -6,13 +6,15 @@ import 'package:usta/Customer/features/customer/favorites/views/widgets/favorite
 class CustomerFavoritesView extends StatelessWidget {
   CustomerFavoritesView({super.key});
 
-  final controller = Get.put(CustomerFavoritesController());
+  final CustomerFavoritesController controller =
+      Get.isRegistered<CustomerFavoritesController>()
+      ? Get.find<CustomerFavoritesController>()
+      : Get.put(CustomerFavoritesController());
 
   Color get blue => const Color(0xFF2563EB);
 
   @override
   Widget build(BuildContext context) {
-    
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -56,4 +58,3 @@ class CustomerFavoritesView extends StatelessWidget {
     );
   }
 }
-

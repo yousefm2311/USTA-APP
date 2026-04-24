@@ -6,10 +6,18 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
+import 'package:usta/Customer/core/services/notification_navigation.dart';
 import 'package:usta/Customer/core/services/token_storage.dart';
+import 'package:usta/Customer/core/utils/routes/routes.dart';
 import 'package:usta/Customer/firebase_options.dart';
+import 'package:usta/Customer/features/customer/chat/views/customer_chat_list_view.dart';
+import 'package:usta/Customer/features/customer/chat/views/customer_chat_room_view.dart';
 import 'package:usta/Customer/features/customer/notifications/controllers/customer_notifications_controller.dart';
-
+import 'package:usta/Customer/features/customer/payments/views/customer_payment_receipt_view.dart';
+import 'package:usta/Customer/features/customer/payments/views/customer_payments_history_view.dart';
+import 'package:usta/Customer/features/customer/requests/views/customer_active_requests/customer_active_requests_view.dart';
+import 'package:usta/Customer/features/customer/requests/views/customer_active_requests/customer_request_details_view.dart';
+import 'package:usta/Customer/features/customer/wallet/views/customer_wallet_view.dart';
 
 class NotificationService {
   NotificationService._internal();
@@ -68,7 +76,8 @@ class NotificationService {
 
     await _local
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.requestNotificationsPermission();
   }
 
@@ -95,7 +104,8 @@ class NotificationService {
     );
     await _local
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(channel);
   }
 
@@ -116,19 +126,22 @@ class NotificationService {
 
   Future<void> sendTokenToBackend(String token) async {
     if (Get.isRegistered<CustomerNotificationsController>()) {
-      await Get.find<CustomerNotificationsController>()
-          .ensureRegisteredFcm(token);
+      await Get.find<CustomerNotificationsController>().ensureRegisteredFcm(
+        token,
+      );
       return;
     }
-    if (kDebugMode) debugPrint('FCM token (not sent, controller missing): $token');
+    if (kDebugMode)
+      debugPrint('FCM token (not sent, controller missing): $token');
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
     final notif = message.notification;
     final title = notif?.title ?? message.data['title'] ?? 'إشعار جديد'.tr;
     final body = notif?.body ?? message.data['body'] ?? '';
-    final safeData =
-        message.data.map((k, v) => MapEntry(k, v?.toString() ?? ''));
+    final safeData = message.data.map(
+      (k, v) => MapEntry(k, v?.toString() ?? ''),
+    );
     final payload = jsonEncode(safeData);
 
     final androidDetails = AndroidNotificationDetails(
@@ -141,8 +154,10 @@ class NotificationService {
       sound: const RawResourceAndroidNotificationSound('custom_sound'),
     );
     const iosDetails = DarwinNotificationDetails(sound: 'custom_sound.caf');
-    final details =
-        NotificationDetails(android: androidDetails, iOS: iosDetails);
+    final details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
 
     await _local.show(
       DateTime.now().millisecondsSinceEpoch ~/ 1000,
@@ -171,27 +186,80 @@ class NotificationService {
   }
 
   void _navigateFromData(Map<String, String> data) {
-    final route = data['route'] ?? '';
-    final id =
-        data['id']?.toString() ?? data['chatId']?.toString() ?? '';
+    final destination = resolveCustomerNotificationDestination(data);
 
-    if (route.isEmpty) {
-      debugPrint('Notification route missing; ignoring.');
-      return;
+    switch (destination.kind) {
+      case CustomerNotificationDestinationKind.chat:
+        final chatTitle = destination.title.isNotEmpty
+            ? destination.title
+            : 'محادثة'.tr;
+        if (destination.isDirect && destination.artisanId.isNotEmpty) {
+          Get.to(
+            () => CustomerChatRoomView(
+              requestId: '',
+              customerId: destination.artisanId,
+              customerName: chatTitle,
+              isDirect: true,
+            ),
+          );
+          return;
+        }
+        if (destination.requestId.isNotEmpty) {
+          Get.to(
+            () => CustomerChatRoomView(
+              requestId: destination.requestId,
+              customerName: chatTitle,
+            ),
+          );
+          return;
+        }
+        Get.to(() => const CustomerChatListView());
+        return;
+      case CustomerNotificationDestinationKind.request:
+        if (destination.requestId.isNotEmpty) {
+          Get.to(
+            () => CustomerRequestDetailsView(requestId: destination.requestId),
+          );
+          return;
+        }
+        Get.to(() => const CustomerActiveRequestsView());
+        return;
+      case CustomerNotificationDestinationKind.payment:
+        if (destination.paymentId.isNotEmpty) {
+          Get.to(
+            () => CustomerPaymentReceiptView(paymentId: destination.paymentId),
+          );
+          return;
+        }
+        Get.to(() => CustomerPaymentsHistoryView());
+        return;
+      case CustomerNotificationDestinationKind.wallet:
+        Get.to(() => CustomerWalletView());
+        return;
+      case CustomerNotificationDestinationKind.namedRoute:
+        Get.toNamed(
+          destination.route,
+          arguments: {'id': destination.id, 'data': data},
+        );
+        return;
+      case CustomerNotificationDestinationKind.unknown:
+        final rawRoute =
+            data['route'] ??
+            data['screen'] ??
+            data['path'] ??
+            data['deepLink'] ??
+            '';
+        if (rawRoute == AppRoutes.customerBottomNaviBar ||
+            rawRoute == AppRoutes.customerHomeView) {
+          Get.toNamed(
+            rawRoute,
+            arguments: {'id': destination.id, 'data': data},
+          );
+          return;
+        }
+        debugPrint('Notification route not recognized: $rawRoute');
+        return;
     }
-
-    if (route == '/product_details' && id.isNotEmpty) {
-      // Get.to(() => ProductDetailsPage(id: id));
-      return;
-    }
-
-    if (route == '/chat' && id.isNotEmpty) {
-      // Get.to(() => ChatPage(chatId: id));
-      return;
-    }
-
-    debugPrint('Notification route not recognized: $route');
-    Get.toNamed(route, arguments: {'id': id});
   }
 
   Future<void> _logFcmToken() async {

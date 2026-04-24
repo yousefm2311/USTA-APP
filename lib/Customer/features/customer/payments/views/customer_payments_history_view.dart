@@ -6,7 +6,10 @@ import 'package:usta/Customer/features/customer/payments/views/customer_payment_
 class CustomerPaymentsHistoryView extends StatelessWidget {
   CustomerPaymentsHistoryView({super.key});
 
-  final controller = Get.put(CustomerPaymentsController());
+  final CustomerPaymentsController controller =
+      Get.isRegistered<CustomerPaymentsController>()
+      ? Get.find<CustomerPaymentsController>()
+      : Get.put(CustomerPaymentsController());
 
   Color get bg => const Color(0xFF050816);
   Color get card => const Color(0xFF0B1020);
@@ -61,15 +64,16 @@ class CustomerPaymentsHistoryView extends StatelessWidget {
         'عملية'.tr;
     final credit = _asNum(payment['credit']) ?? 0;
     final debit = _asNum(payment['debit']) ?? 0;
-    final amountRaw = _asNum(payment['amount']) ??
+    final amountRaw =
+        _asNum(payment['amount']) ??
         _asNum(payment['total']) ??
         (credit - debit);
     final amount = amountRaw;
     final currency = 'ج.م'.tr;
-    final date = payment['createdAt']?.toString() ??
-        payment['date']?.toString() ??
-        '';
-    final id = payment['_id']?.toString() ??
+    final date =
+        payment['createdAt']?.toString() ?? payment['date']?.toString() ?? '';
+    final id =
+        payment['_id']?.toString() ??
         payment['id']?.toString() ??
         payment['paymentId']?.toString() ??
         '';
@@ -82,7 +86,7 @@ class CustomerPaymentsHistoryView extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color:  Theme.of(Get.context!).colorScheme.surface,
+          color: Theme.of(Get.context!).colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.white10),
         ),
@@ -105,21 +109,16 @@ class CustomerPaymentsHistoryView extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     date,
-                    style: const TextStyle(
-                      fontFamily: "Cairo",
-                      fontSize: 12,
-                    ),
+                    style: const TextStyle(fontFamily: "Cairo", fontSize: 12),
                   ),
                 ],
               ),
             ),
             Text(
-              "@amount @currency".trParams(
-                {
-                  'amount': amount.toStringAsFixed(2),
-                  'currency': currency,
-                },
-              ),
+              "@amount @currency".trParams({
+                'amount': amount.toStringAsFixed(2),
+                'currency': currency,
+              }),
               style: const TextStyle(
                 fontFamily: "Cairo",
                 fontWeight: FontWeight.bold,
@@ -146,4 +145,3 @@ class CustomerPaymentsHistoryView extends StatelessWidget {
     return null;
   }
 }
-

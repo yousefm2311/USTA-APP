@@ -7,7 +7,10 @@ import 'customer_navigation_controller.dart';
 class CustomerBottomNaviBar extends StatelessWidget {
   CustomerBottomNaviBar({super.key});
 
-  final controller = Get.put(CustomerNavigationController(), permanent: true);
+  final CustomerNavigationController controller =
+      Get.isRegistered<CustomerNavigationController>()
+      ? Get.find<CustomerNavigationController>()
+      : Get.put(CustomerNavigationController(), permanent: true);
 
   Color get darkBg => const Color(0xFF050816);
   Color get cardDark => const Color(0xFF0B1020);
@@ -101,4 +104,3 @@ class CustomerBottomNaviBar extends StatelessWidget {
     );
   }
 }
-

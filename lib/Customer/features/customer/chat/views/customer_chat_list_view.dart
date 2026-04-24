@@ -18,20 +18,30 @@ class CustomerChatListView extends StatefulWidget {
 
 class _CustomerChatListViewState extends State<CustomerChatListView> {
   final ChatController controller = Get.find<ChatController>(tag: 'customer');
-  final ThemeController themeController = Get.find<ThemeController>(tag: 'customer');
-  late final CustomerNavigationController _navController;
+  final ThemeController themeController = Get.find<ThemeController>(
+    tag: 'customer',
+  );
+  CustomerNavigationController? _navController;
   Worker? _navWorker;
   bool _active = false;
 
   @override
   void initState() {
     super.initState();
-    _navController = Get.find<CustomerNavigationController>();
+    _navController = Get.isRegistered<CustomerNavigationController>()
+        ? Get.find<CustomerNavigationController>()
+        : null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _handleTabChange(_navController.selectedIndex.value);
+      if (_navController == null) {
+        _activateChatList();
+        return;
+      }
+      _handleTabChange(_navController!.selectedIndex.value);
     });
-    _navWorker = ever<int>(_navController.selectedIndex, _handleTabChange);
+    if (_navController != null) {
+      _navWorker = ever<int>(_navController!.selectedIndex, _handleTabChange);
+    }
   }
 
   @override
@@ -42,20 +52,28 @@ class _CustomerChatListViewState extends State<CustomerChatListView> {
 
   void _handleTabChange(int index) {
     final shouldBeActive = index == 2;
-    if (shouldBeActive && !_active) {
-      _active = true;
-      if (Get.isRegistered<ChatRealtimeService>(tag: 'customer')) {
-        Get.find<ChatRealtimeService>(tag: 'customer').start();
-      }
-      if (Get.isRegistered<RealtimeController>(tag: 'customer')) {
-        Get.find<RealtimeController>(tag: 'customer').connectIfNeeded();
-      }
-      controller.fetchChats();
+    if (shouldBeActive) {
+      _activateChatList();
       return;
     }
-    if (!shouldBeActive && _active) {
-      _active = false;
+    _deactivateChatList();
+  }
+
+  void _activateChatList() {
+    if (_active) return;
+    _active = true;
+    if (Get.isRegistered<ChatRealtimeService>(tag: 'customer')) {
+      Get.find<ChatRealtimeService>(tag: 'customer').start();
     }
+    if (Get.isRegistered<RealtimeController>(tag: 'customer')) {
+      Get.find<RealtimeController>(tag: 'customer').connectIfNeeded();
+    }
+    controller.fetchChats();
+  }
+
+  void _deactivateChatList() {
+    if (!_active) return;
+    _active = false;
   }
 
   int _getUnreadCount(Map<String, dynamic> chat) {
@@ -101,16 +119,18 @@ class _CustomerChatListViewState extends State<CustomerChatListView> {
               ListTile(
                 leading: const Icon(Icons.delete_outline),
                 title: Text('حذف المحادثة'.tr),
-                subtitle:
-                    Text('سيتم حذف جميع الرسائل المباشرة مع هذا الحرفي'.tr),
+                subtitle: Text(
+                  'سيتم حذف جميع الرسائل المباشرة مع هذا الحرفي'.tr,
+                ),
                 onTap: () async {
                   Navigator.of(context).pop();
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (_) => AlertDialog(
                       title: Text('تأكيد الحذف'.tr),
-                      content:
-                          Text('سيتم حذف المحادثة بالكامل. هل أنت متأكد؟'.tr),
+                      content: Text(
+                        'سيتم حذف المحادثة بالكامل. هل أنت متأكد؟'.tr,
+                      ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(false),
@@ -209,8 +229,9 @@ class _CustomerChatListViewState extends State<CustomerChatListView> {
                   chat['otherId']?.toString() ??
                   '';
               final isAdminNotice = chat['adminNotice'] == true;
-              final displayName =
-                  isAdminNotice && artisanId.isEmpty ? 'الإدارة' : name;
+              final displayName = isAdminNotice && artisanId.isEmpty
+                  ? 'الإدارة'
+                  : name;
               final lastMessage =
                   chat['lastMessage']?.toString() ??
                   chat['lastMessageText']?.toString() ??
@@ -246,7 +267,7 @@ class _CustomerChatListViewState extends State<CustomerChatListView> {
                         requestId: requestId,
                         customerName: name,
                       ),
-                      );
+                    );
                   }
                 },
                 onLongPress: () => _onChatLongPress(chat),

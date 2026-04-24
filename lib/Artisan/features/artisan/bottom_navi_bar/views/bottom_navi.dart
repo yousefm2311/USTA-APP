@@ -8,7 +8,10 @@ import 'package:usta/Artisan/features/artisan/bottom_navi_bar/controllers/botton
 class ArtisanBottomNaviBar extends StatelessWidget {
   ArtisanBottomNaviBar({super.key});
 
-  final controller = Get.put(NavigationController());
+  final NavigationController controller =
+      Get.isRegistered<NavigationController>()
+      ? Get.find<NavigationController>()
+      : Get.put(NavigationController());
 
   Color get darkBg => const Color(0xFF050816);
   Color get cardDark => const Color(0xFF0B1020);
@@ -76,4 +79,3 @@ class ArtisanBottomNaviBar extends StatelessWidget {
     );
   }
 }
-

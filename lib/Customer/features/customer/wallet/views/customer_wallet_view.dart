@@ -7,7 +7,10 @@ import 'package:usta/Customer/features/customer/wallet/views/customer_wallet_rec
 class CustomerWalletView extends StatelessWidget {
   CustomerWalletView({super.key});
 
-  final controller = Get.put(CustomerWalletController());
+  final CustomerWalletController controller =
+      Get.isRegistered<CustomerWalletController>()
+      ? Get.find<CustomerWalletController>()
+      : Get.put(CustomerWalletController());
 
   Color get bg => const Color(0xFF050816);
   Color get card => const Color(0xFF0B1020);
@@ -19,10 +22,7 @@ class CustomerWalletView extends StatelessWidget {
       appBar: AppBar(
         elevation: 0,
         centerTitle: true,
-        title: Text(
-          "المحفظة".tr,
-          style: const TextStyle(fontFamily: "Cairo"),
-        ),
+        title: Text("المحفظة".tr, style: const TextStyle(fontFamily: "Cairo")),
       ),
       body: Obx(
         () => ListView(
@@ -125,15 +125,9 @@ class CustomerWalletView extends StatelessWidget {
       child: ListTile(
         onTap: onTap,
         leading: Icon(icon, color: blue),
-        title: Text(
-          title.tr,
-          style: const TextStyle(
-            fontFamily: "Cairo",
-          ),
-        ),
+        title: Text(title.tr, style: const TextStyle(fontFamily: "Cairo")),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
       ),
     );
   }
 }
-

@@ -6,7 +6,10 @@ import 'package:usta/Customer/features/customer/complaints/views/widgets/custome
 
 class CustomerComplaintsView extends StatelessWidget {
   CustomerComplaintsView({super.key});
-  final controller = Get.put(CustomerComplaintsController());
+  final CustomerComplaintsController controller =
+      Get.isRegistered<CustomerComplaintsController>()
+      ? Get.find<CustomerComplaintsController>()
+      : Get.put(CustomerComplaintsController());
   Color get bg => const Color(0xFF050816);
   Color get card => const Color(0xFF0B1020);
 
@@ -65,7 +68,8 @@ class CustomerComplaintsView extends StatelessWidget {
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: controller.complaints.length,
-            itemBuilder: (_, i) => itemcomplaint(context, controller.complaints[i]),
+            itemBuilder: (_, i) =>
+                itemcomplaint(context, controller.complaints[i]),
           ),
         );
       }),
@@ -77,9 +81,8 @@ class CustomerComplaintsView extends StatelessWidget {
           "إنشاء شكوى".tr,
           style: const TextStyle(fontFamily: 'Cairo', color: Colors.white),
         ),
-        icon: const Icon(Icons.add,color: Colors.white,),
+        icon: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 }
-

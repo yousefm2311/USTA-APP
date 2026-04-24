@@ -5,7 +5,10 @@ import 'package:usta/Customer/features/customer/reviews/controllers/customer_rev
 class CustomerReviewsView extends StatelessWidget {
   CustomerReviewsView({super.key});
 
-  final controller = Get.put(CustomerReviewsController());
+  final CustomerReviewsController controller =
+      Get.isRegistered<CustomerReviewsController>()
+      ? Get.find<CustomerReviewsController>()
+      : Get.put(CustomerReviewsController());
 
   @override
   Widget build(BuildContext context) {
@@ -46,10 +49,7 @@ class CustomerReviewsView extends StatelessWidget {
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: controller.reviews.length,
-            itemBuilder: (_, i) => _reviewCard(
-              context,
-              controller.reviews[i],
-            ),
+            itemBuilder: (_, i) => _reviewCard(context, controller.reviews[i]),
           ),
         );
       }),
@@ -149,9 +149,7 @@ class CustomerReviewsView extends StatelessWidget {
                       ? null
                       : () => _openEdit(context, review),
                   child: Text(
-                    comment.isEmpty
-                        ? 'إضافة تعليق'.tr
-                        : 'تعديل التقييم'.tr,
+                    comment.isEmpty ? 'إضافة تعليق'.tr : 'تعديل التقييم'.tr,
                     style: const TextStyle(fontFamily: 'Cairo'),
                   ),
                 ),
@@ -242,8 +240,7 @@ class CustomerReviewsView extends StatelessWidget {
                     children: List.generate(
                       5,
                       (i) => IconButton(
-                        onPressed: () =>
-                            setModalState(() => rating = i + 1),
+                        onPressed: () => setModalState(() => rating = i + 1),
                         icon: Icon(
                           Icons.star,
                           color: i < rating ? Colors.amber : Colors.white30,
@@ -331,4 +328,3 @@ class CustomerReviewsView extends StatelessWidget {
     }
   }
 }
-

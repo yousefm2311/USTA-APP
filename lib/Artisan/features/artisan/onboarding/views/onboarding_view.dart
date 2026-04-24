@@ -16,7 +16,9 @@ class OnboardingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(OnboardingController());
+    final controller = Get.isRegistered<OnboardingController>()
+        ? Get.find<OnboardingController>()
+        : Get.put(OnboardingController());
     final slides = const [
       OnboardingPage(
         title: "مرحباً بك في USTA",
@@ -51,16 +53,13 @@ class OnboardingView extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                   Text(
-                    "USTA",
-                    style: AppTextStyles.title(context),
-                  ),
+                  Text("USTA", style: AppTextStyles.title(context)),
                   TextButton(
                     onPressed: () async {
                       box.write(AppStrings.kOnboardingDoneKey, true);
                       Get.offAllNamed(AppRoutes.login);
                     },
-                    child:  Text("تخطي", style: AppTextStyles.body(context)),
+                    child: Text("تخطي", style: AppTextStyles.body(context)),
                   ),
                 ],
               ),
@@ -84,10 +83,7 @@ class OnboardingView extends StatelessWidget {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            card,
-                            card.withOpacity(0.7),
-                          ],
+                          colors: [card, card.withOpacity(0.7)],
                         ),
                       ),
                       child: slide,
@@ -157,4 +153,3 @@ class OnboardingView extends StatelessWidget {
     );
   }
 }
-
