@@ -287,7 +287,6 @@ import 'package:usta/Artisan/core/realtime/socket_service.dart';
 import 'package:usta/Artisan/core/services/connectivity/connectivity_service.dart';
 import 'package:usta/Artisan/core/services/network/api_client.dart';
 import 'package:usta/Artisan/core/services/token_storage.dart';
-import 'package:usta/Artisan/core/services/verification/artisan_verification_guard_service.dart';
 import 'package:usta/Artisan/core/utils/constants/api_endpoints.dart';
 import 'package:usta/Artisan/core/utils/routes/routes.dart';
 import 'package:usta/app/app_mode_controller.dart';
@@ -357,13 +356,6 @@ class AuthService extends GetxService {
     _accessToken.value = accessToken;
     _updateAuthState(true);
     Future.microtask(_dispatchLoginSideEffects);
-    if (Get.isRegistered<ArtisanVerificationGuardService>()) {
-      Future.microtask(
-        () => Get.find<ArtisanVerificationGuardService>().syncAndEnforce(
-          refreshFromServer: true,
-        ),
-      );
-    }
   }
 
   Future<void> _dispatchLoginSideEffects() async {
@@ -458,11 +450,6 @@ class AuthService extends GetxService {
 
         if (Get.isRegistered<ArtisanController>()) {
           await Get.find<ArtisanController>().start();
-        }
-        if (Get.isRegistered<ArtisanVerificationGuardService>()) {
-          await Get.find<ArtisanVerificationGuardService>().syncAndEnforce(
-            refreshFromServer: true,
-          );
         }
         _shouldLogoutAfterRefreshFailure = false;
         log('[AuthService] Refresh success.');

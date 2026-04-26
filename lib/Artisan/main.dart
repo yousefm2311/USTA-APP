@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
@@ -14,20 +13,15 @@ import 'package:usta/Artisan/core/services/fcm_service.dart';
 import 'package:usta/Artisan/core/realtime/realtime_lifecycle_service.dart';
 import 'package:usta/Artisan/core/services/auth_service.dart';
 import 'package:usta/Artisan/core/services/network/api_client.dart';
-import 'package:usta/Artisan/core/services/verification/artisan_verification_guard_service.dart';
 import 'package:usta/Artisan/core/services/settings/settings_services.dart';
 import 'package:usta/Artisan/core/services/theme/themes.dart';
 import 'package:usta/Artisan/core/services/token_storage.dart';
-import 'package:usta/Artisan/core/services/database/share_Prefs.dart';
 import 'package:usta/Artisan/core/utils/bindings/binding.dart';
 import 'package:usta/Artisan/core/utils/bindings/customer_binding_v2.dart';
 import 'package:usta/Artisan/core/utils/constants/app_translations.dart';
-import 'package:usta/Artisan/core/utils/constants/app_constant.dart';
-import 'package:usta/Artisan/core/utils/kyc/artisan_verification_route.dart';
 import 'package:usta/Artisan/core/utils/routes/routes.dart';
 import 'package:usta/Artisan/core/utils/widgets/app_snackbar.dart';
 import 'package:usta/Artisan/data/repositories/fcm_repository.dart';
-import 'package:usta/Artisan/data/providers/artisan_api.dart';
 import 'package:usta/Artisan/features/artisan/settings/controllers/locale_controller.dart';
 import 'package:usta/Artisan/features/artisan/settings/controllers/theme_controller.dart';
 import 'package:usta/Artisan/firebase_options.dart';
@@ -112,9 +106,6 @@ Future initService() async {
   if (!Get.isRegistered<ApiClient>(tag: 'artisan')) {
     Get.put(ApiClient(), permanent: true, tag: 'artisan');
   }
-  if (!Get.isRegistered<ArtisanVerificationGuardService>()) {
-    Get.put(ArtisanVerificationGuardService(), permanent: true);
-  }
   await Get.putAsync<SettingsServices>(
     () => SettingsServices().init(),
     tag: 'artisan',
@@ -126,33 +117,7 @@ Future<String> resolveArtisanInitialRoute() async {
   await storage.init();
   final token = storage.accessToken;
   if (token != null && token.isNotEmpty && !storage.loggedOut) {
-    final prefs = AppPrefs();
-    Map<String, dynamic>? cachedProfile;
-    try {
-      await prefs.init();
-      cachedProfile = decodeCachedArtisanProfile(
-        prefs.getString(kCachedProfileKey),
-      );
-    } catch (_) {
-      cachedProfile = null;
-    }
-
-    if (Get.isRegistered<ApiClient>(tag: 'artisan')) {
-      try {
-        final response = await ArtisanApi().me();
-        if (response is Map<String, dynamic>) {
-          final profile = (response['artisan'] is Map<String, dynamic>)
-              ? response['artisan'] as Map<String, dynamic>
-              : response;
-          await prefs.setString(kCachedProfileKey, jsonEncode(profile));
-          return resolveArtisanVerificationRoute(profile);
-        }
-      } catch (_) {
-        // Fall back to the latest cached profile when the network is offline.
-      }
-    }
-
-    return resolveArtisanVerificationRoute(cachedProfile);
+    return AppRoutes.bottomNaviBar;
   }
   return AppRoutes.login;
 }
@@ -193,13 +158,6 @@ class ArtisanApp extends StatelessWidget {
         locale: localeController.locale.value,
         fallbackLocale: const Locale('ar', 'EG'),
         supportedLocales: const [Locale('ar', 'EG'), Locale('en', 'US')],
-        routingCallback: (routing) {
-          if (Get.isRegistered<ArtisanVerificationGuardService>()) {
-            Get.find<ArtisanVerificationGuardService>().syncAndEnforce(
-              currentRoute: routing?.current,
-            );
-          }
-        },
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,

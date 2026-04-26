@@ -1,6 +1,4 @@
-import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:usta/Artisan/core/middleware/middleware.dart';
 import 'package:usta/Artisan/core/utils/constants/app_constant.dart';
 import 'package:usta/Artisan/features/artisan/artisan_active_requests/artisan_active_requests_view.dart';
@@ -41,12 +39,6 @@ import 'package:usta/Artisan/features/auth/views/forget_password/presentation/vi
 import 'package:usta/Artisan/features/auth/views/forget_password/presentation/views/success.dart';
 import 'package:usta/Artisan/features/auth/views/loign_view.dart';
 import 'package:usta/Artisan/features/auth/views/register_view.dart';
-import 'package:usta/Artisan/features/verification/views/artisan_id_upload_view.dart';
-import 'package:usta/Artisan/features/verification/views/artisan_rejected_view.dart';
-import 'package:usta/Artisan/features/verification/views/artisan_selfie_view.dart';
-import 'package:usta/Artisan/features/verification/views/artisan_verification_camera_view.dart';
-import 'package:usta/Artisan/features/verification/views/artisan_verification_document_crop_view.dart';
-import 'package:usta/Artisan/features/verification/views/artisan_verification_status_view.dart';
 import 'package:usta/app/choose_user_type_view.dart';
 
 abstract class AppRoutes {
@@ -293,59 +285,37 @@ abstract class AppRoutes {
     ),
     GetPage(
       name: artisanVerificationIdView,
-      page: () => const ArtisanIdUploadView(),
+      page: () => ArtisanBottomNaviBar(),
       transition: Transition.cupertino,
       transitionDuration: kTransitionDuration,
     ),
     GetPage(
       name: artisanVerificationSelfieView,
-      page: () => const ArtisanSelfieVerificationView(),
+      page: () => ArtisanBottomNaviBar(),
       transition: Transition.cupertino,
       transitionDuration: kTransitionDuration,
     ),
     GetPage(
       name: artisanVerificationStatusView,
-      page: () => const ArtisanVerificationStatusView(),
+      page: () => ArtisanBottomNaviBar(),
       transition: Transition.cupertino,
       transitionDuration: kTransitionDuration,
     ),
     GetPage(
       name: artisanVerificationRejectedView,
-      page: () => const ArtisanVerificationRejectedView(),
+      page: () => ArtisanBottomNaviBar(),
       transition: Transition.cupertino,
       transitionDuration: kTransitionDuration,
     ),
     GetPage(
       name: artisanVerificationCameraView,
-      page: () {
-        final args = Get.arguments as Map<String, dynamic>? ?? const {};
-        return ArtisanVerificationCameraView(
-          mode:
-              args['mode'] as VerificationCaptureMode? ??
-              VerificationCaptureMode.document,
-          screenTitle: args['screenTitle'] as String?,
-          screenHint: args['screenHint'] as String?,
-          frameLabel: args['frameLabel'] as String?,
-        );
-      },
+      page: () => ArtisanBottomNaviBar(),
       transition: Transition.cupertino,
       transitionDuration: kTransitionDuration,
     ),
     GetPage(
       name: artisanVerificationDocumentCropView,
-      page: () {
-        final args = Get.arguments as Map<String, dynamic>? ?? const {};
-        final file = args['file'];
-        if (file is! XFile) {
-          return const SizedBox.shrink();
-        }
-        return ArtisanVerificationDocumentCropView(
-          file: file,
-          screenTitle: args['screenTitle'] as String?,
-          screenHint: args['screenHint'] as String?,
-          frameLabel: args['frameLabel'] as String?,
-        );
-      },
+      page: () => ArtisanBottomNaviBar(),
       transition: Transition.cupertino,
       transitionDuration: kTransitionDuration,
     ),

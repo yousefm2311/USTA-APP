@@ -67,9 +67,7 @@ void main() {
     await prefs.init();
     await prefs.setString(
       kCachedProfileKey,
-      jsonEncode({
-        'verificationStatus': 'approved',
-      }),
+      jsonEncode({'verificationStatus': 'approved'}),
     );
     final storage = artisan_storage.TokenStorage(
       secureStorage: InMemorySecureStorage(),
@@ -102,14 +100,12 @@ void main() {
     expect(route, artisan_routes.AppRoutes.login);
   });
 
-  test('artisan route resumes the KYC step from cached profile', () async {
+  test('artisan route ignores cached KYC step while KYC is disabled', () async {
     final prefs = AppPrefs();
     await prefs.init();
     await prefs.setString(
       kCachedProfileKey,
-      jsonEncode({
-        'verificationStatus': 'documents_uploaded',
-      }),
+      jsonEncode({'verificationStatus': 'documents_uploaded'}),
     );
     final storage = artisan_storage.TokenStorage(
       secureStorage: InMemorySecureStorage(),
@@ -123,6 +119,6 @@ void main() {
 
     final route = await artisan_main.resolveArtisanInitialRoute();
 
-    expect(route, artisan_routes.AppRoutes.artisanVerificationSelfieView);
+    expect(route, artisan_routes.AppRoutes.bottomNaviBar);
   });
 }

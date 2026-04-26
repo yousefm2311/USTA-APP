@@ -3,44 +3,24 @@ import 'package:usta/Artisan/core/utils/kyc/artisan_verification_route.dart';
 import 'package:usta/Artisan/core/utils/routes/routes.dart';
 
 void main() {
-  test('verified artisan goes to home route', () {
-    final route = resolveArtisanVerificationRoute({
-      'verificationStatus': 'approved',
-    });
+  test('KYC-disabled resolver always sends artisans to the main app', () {
+    final statuses = [
+      'approved',
+      'pending_documents',
+      'documents_uploaded',
+      'under_review',
+      'rejected',
+      null,
+    ];
 
-    expect(route, AppRoutes.bottomNaviBar);
-  });
-
-  test('artisan with no documents goes to ID upload route', () {
-    final route = resolveArtisanVerificationRoute({
-      'verificationStatus': 'pending_documents',
-    });
-
-    expect(route, AppRoutes.artisanVerificationIdView);
-  });
-
-  test('artisan with uploaded IDs goes to selfie route', () {
-    final route = resolveArtisanVerificationRoute({
-      'verificationStatus': 'documents_uploaded',
-    });
-
-    expect(route, AppRoutes.artisanVerificationSelfieView);
-  });
-
-  test('artisan under review goes to status route', () {
-    final route = resolveArtisanVerificationRoute({
-      'verificationStatus': 'under_review',
-    });
-
-    expect(route, AppRoutes.artisanVerificationStatusView);
-  });
-
-  test('rejected artisan goes to rejected route', () {
-    final route = resolveArtisanVerificationRoute({
-      'verificationStatus': 'rejected',
-    });
-
-    expect(route, AppRoutes.artisanVerificationRejectedView);
+    for (final status in statuses) {
+      final profile = status == null ? null : {'verificationStatus': status};
+      expect(resolveArtisanVerificationRoute(profile), AppRoutes.bottomNaviBar);
+      expect(
+        isArtisanRouteAllowedForVerificationStatus('/any-route', profile),
+        isTrue,
+      );
+    }
   });
 
   test('cached profile decoder ignores invalid json safely', () {

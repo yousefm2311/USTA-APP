@@ -10,7 +10,6 @@ import 'package:usta/Artisan/core/services/network/api_client.dart';
 import 'package:usta/Artisan/core/utils/constants/app_colors.dart';
 import 'package:usta/Artisan/core/utils/constants/app_constant.dart';
 import 'package:usta/Artisan/core/utils/constants/app_strings.dart';
-import 'package:usta/Artisan/core/utils/kyc/artisan_verification_route.dart';
 import 'package:usta/Artisan/core/utils/widgets/app_snackbar.dart';
 import 'package:usta/Artisan/core/utils/routes/routes.dart';
 import 'package:usta/Artisan/data/providers/artisan_api.dart';
@@ -62,9 +61,10 @@ class AuthController extends GetxController {
       final profile = _extractProfile(response);
       if (!_isAccountActivated(profile)) {
         _showSnack(AppStrings.activateAccount.tr, AppColors.warning);
-        Get.offNamed(AppRoutes.activation, arguments: {
-          'email': emailCtrl.text.trim(),
-        });
+        Get.offNamed(
+          AppRoutes.activation,
+          arguments: {'email': emailCtrl.text.trim()},
+        );
         return;
       }
       await _saveTokenFromResponse(response);
@@ -74,7 +74,7 @@ class AuthController extends GetxController {
       }
       await _cacheProfile(response);
       await _handleRealtimeAfterAuth();
-      Get.offAllNamed(resolveArtisanVerificationRoute(profile));
+      Get.offAllNamed(AppRoutes.bottomNaviBar);
       _showSnack(AppStrings.loginSuccess.tr, Colors.green);
     } catch (e) {
       if (e is ApiException) {
@@ -99,15 +99,17 @@ class AuthController extends GetxController {
         phone: phoneCtrl.text.trim(),
       );
       _showSnack(AppStrings.createAccountSuccess.tr, Colors.green);
-      Get.toNamed(AppRoutes.activation, arguments: {
-        'email': emailCtrl.text.trim(),
-      });
+      Get.toNamed(
+        AppRoutes.activation,
+        arguments: {'email': emailCtrl.text.trim()},
+      );
     } on ApiException catch (e) {
       if (e.statusCode == 403) {
         _showSnack(_localizeApiError(e.message), AppColors.warning);
-        Get.offNamed(AppRoutes.activation, arguments: {
-          'email': emailCtrl.text.trim(),
-        });
+        Get.offNamed(
+          AppRoutes.activation,
+          arguments: {'email': emailCtrl.text.trim()},
+        );
         return;
       }
       _handleError(e);
@@ -223,10 +225,7 @@ class AuthController extends GetxController {
       final currentPassword = current?.trim() ?? passwordCtrl.text.trim();
       final nextPassword = next?.trim() ?? newPasswordCtrl.text.trim();
       if (currentPassword.isEmpty || nextPassword.isEmpty) return;
-      await _api.changePassword(
-        current: currentPassword,
-        next: nextPassword,
-      );
+      await _api.changePassword(current: currentPassword, next: nextPassword);
       _showSnack(AppStrings.passwordUpdated.tr, Colors.green);
       Get.back();
     } catch (e) {
@@ -271,7 +270,8 @@ class AuthController extends GetxController {
       await _authService.saveTokens(accessToken: token, refreshToken: refresh);
       if (Get.isRegistered<RealtimeController>(tag: 'artisan')) {
         Get.find<RealtimeController>(tag: 'artisan').setAuthToken(token);
-      }    }
+      }
+    }
   }
 
   Future<void> _cacheProfile(dynamic response) async {
@@ -352,9 +352,13 @@ class AuthController extends GetxController {
   }
 
   bool? _recursiveBoolCheck(
-      Map<String, dynamic> profile, Iterable<String> fields) {
-    final extracted =
-        _extractBoolValue(profile, fields); // check current map first
+    Map<String, dynamic> profile,
+    Iterable<String> fields,
+  ) {
+    final extracted = _extractBoolValue(
+      profile,
+      fields,
+    ); // check current map first
     if (extracted != null) return extracted;
     for (final nestedKey in ['artisan', 'user', 'profile', 'data']) {
       final nested = profile[nestedKey];
@@ -367,7 +371,9 @@ class AuthController extends GetxController {
   }
 
   bool? _extractBoolValue(
-      Map<String, dynamic> profile, Iterable<String> fields) {
+    Map<String, dynamic> profile,
+    Iterable<String> fields,
+  ) {
     for (final field in fields) {
       if (!profile.containsKey(field)) continue;
       final value = profile[field];
@@ -384,8 +390,9 @@ class AuthController extends GetxController {
 
   Future<void> _handleRealtimeAfterAuth() async {
     if (Get.isRegistered<RequestsRealtimeService>()) {
-      await Get.find<RequestsRealtimeService>()
-          .refreshArtisanProfile(forceJoin: true);
+      await Get.find<RequestsRealtimeService>().refreshArtisanProfile(
+        forceJoin: true,
+      );
     }
   }
 
@@ -409,7 +416,9 @@ class AuthController extends GetxController {
   String? _extractRefreshToken(dynamic response) {
     if (response is Map<String, dynamic>) {
       final direct =
-          response['refreshToken'] ?? response['refresh_token'] ?? response['refresh'];
+          response['refreshToken'] ??
+          response['refresh_token'] ??
+          response['refresh'];
       if (direct is String && direct.isNotEmpty) return direct;
       if (response['data'] is Map<String, dynamic>) {
         final nested =
@@ -485,7 +494,13 @@ class AuthController extends GetxController {
 
   bool _matchesInvalidCode(String text) {
     final codeKeywords = ['code', 'verification', 'token'];
-    final invalidKeywords = ['invalid', 'wrong', 'incorrect', 'mismatch', 'expired'];
+    final invalidKeywords = [
+      'invalid',
+      'wrong',
+      'incorrect',
+      'mismatch',
+      'expired',
+    ];
     final hasCode = codeKeywords.any((keyword) => text.contains(keyword));
     final hasInvalid = invalidKeywords.any((keyword) => text.contains(keyword));
     return hasCode && hasInvalid;
@@ -493,11 +508,7 @@ class AuthController extends GetxController {
 
   void _showSnack(String message, Color color) {
     final type = _snackTypeFromColor(color);
-    AppSnackBar.show(
-      _snackTitle(type),
-      message,
-      type: type,
-    );
+    AppSnackBar.show(_snackTitle(type), message, type: type);
   }
 
   SnackBarType _snackTypeFromColor(Color color) {
@@ -526,6 +537,3 @@ class AuthController extends GetxController {
     }
   }
 }
-
-
-

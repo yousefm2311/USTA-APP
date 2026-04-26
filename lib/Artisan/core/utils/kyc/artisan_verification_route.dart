@@ -45,36 +45,14 @@ Map<String, dynamic>? decodeCachedArtisanProfile(String? raw) {
 }
 
 String extractArtisanVerificationStatus(Map<String, dynamic>? profile) {
-  final status = _extractString(profile, ['verificationStatus'])?.toLowerCase();
-  switch (status) {
-    case 'documents_uploaded':
-    case 'selfie_uploaded':
-    case 'under_review':
-    case 'approved':
-    case 'rejected':
-    case 'pending_documents':
-      return status!;
-    default:
-      return 'pending_documents';
-  }
+  // Artisan identity verification is currently disabled product-wide.
+  // Treat every artisan as allowed so stale cached KYC states never block entry.
+  return 'approved';
 }
 
 String resolveArtisanVerificationRoute(Map<String, dynamic>? profile) {
-  final status = extractArtisanVerificationStatus(profile);
-  switch (status) {
-    case 'documents_uploaded':
-      return AppRoutes.artisanVerificationSelfieView;
-    case 'selfie_uploaded':
-    case 'under_review':
-      return AppRoutes.artisanVerificationStatusView;
-    case 'approved':
-      return AppRoutes.bottomNaviBar;
-    case 'rejected':
-      return AppRoutes.artisanVerificationRejectedView;
-    case 'pending_documents':
-    default:
-      return AppRoutes.artisanVerificationIdView;
-  }
+  // KYC is disabled, so an authenticated artisan always lands in the main app.
+  return AppRoutes.bottomNaviBar;
 }
 
 bool isArtisanVerificationPublicRoute(String? route) {
@@ -86,32 +64,6 @@ bool isArtisanRouteAllowedForVerificationStatus(
   String? route,
   Map<String, dynamic>? profile,
 ) {
-  if (route == null || route.isEmpty) return true;
-  if (isArtisanVerificationPublicRoute(route)) return true;
-
-  final status = extractArtisanVerificationStatus(profile);
-  if (status == 'approved') return true;
-
-  switch (status) {
-    case 'pending_documents':
-      return route == AppRoutes.artisanVerificationIdView ||
-          route == AppRoutes.artisanVerificationCameraView ||
-          route == AppRoutes.artisanVerificationDocumentCropView;
-    case 'documents_uploaded':
-      return route == AppRoutes.artisanVerificationIdView ||
-          route == AppRoutes.artisanVerificationCameraView ||
-          route == AppRoutes.artisanVerificationDocumentCropView ||
-          route == AppRoutes.artisanVerificationSelfieView;
-    case 'selfie_uploaded':
-    case 'under_review':
-      return route == AppRoutes.artisanVerificationStatusView;
-    case 'rejected':
-      return route == AppRoutes.artisanVerificationRejectedView ||
-          route == AppRoutes.artisanVerificationIdView ||
-          route == AppRoutes.artisanVerificationCameraView ||
-          route == AppRoutes.artisanVerificationDocumentCropView ||
-          route == AppRoutes.artisanVerificationSelfieView;
-    default:
-      return false;
-  }
+  // With KYC disabled, no artisan route should be blocked by verification state.
+  return true;
 }
