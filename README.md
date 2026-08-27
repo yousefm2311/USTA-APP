@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>🛠️ Merge Usta (أسطى)</h1>
+  <h1>🛠️ Merge Usta (استا)</h1>
   <p><strong>A Next-Generation Home Services & Artisan Marketplace App</strong></p>
   
   <p>
