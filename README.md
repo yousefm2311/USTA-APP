@@ -1,76 +1,149 @@
-# Merge Usta
+<div align="center">
+  <h1>🛠️ Merge Usta (أسطى)</h1>
+  <p><strong>A Next-Generation Home Services & Artisan Marketplace App</strong></p>
+  
+  <p>
+    <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter" /></a>
+    <a href="https://dart.dev"><img src="https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white" alt="Dart" /></a>
+    <a href="#"><img src="https://img.shields.io/badge/GetX-State_Management-FF6F00?style=for-the-badge" alt="GetX" /></a>
+    <a href="https://socket.io"><img src="https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white" alt="Socket.io" /></a>
+    <a href="https://firebase.google.com"><img src="https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" alt="Firebase" /></a>
+  </p>
+  
+  <p>
+    <a href="README_AR.md">🇸🇦 قراءة الوصف باللغة العربية</a>
+  </p>
+</div>
 
-A full Flutter application for the Usta service platform, combining customer-facing flows, service workflows, realtime communication, location features, media handling, payments UI, and notifications.
+---
 
-## Status
+## 📖 Project Overview
 
-Private pinned candidate. Review secrets and production configuration before making this repository public.
+**Merge Usta** is a comprehensive, dual-sided Flutter application designed to bridge the gap between service seekers (Customers) and professional service providers (Artisans/Ustas). 
 
-## Key Features
+Instead of maintaining two separate codebases, Merge Usta elegantly combines **both Customer and Artisan applications into a single unified bundle** using a smart GetX App Switcher. It features a robust real-time engine for chat and live tracking, advanced media handling, and top-tier security including ML-driven KYC verification.
 
-- Service marketplace mobile app foundation
-- GetX state management and local storage
-- Arabic/RTL-ready localization support
-- API integration with Dio and request logging
-- Realtime messaging foundation with Socket.IO
-- Image, camera, audio, video, and file workflows
-- Google Maps, geolocation, and geocoding support
-- Firebase Core and Firebase Messaging setup
-- Charts, cards, onboarding, OTP, and payment UI components
+---
 
-## Tech Stack
+## ✨ Key Features
 
-- Flutter
-- Dart
-- GetX
-- Dio
-- Socket.IO Client
-- Firebase Messaging
-- Google Maps Flutter
-- Geolocator / Geocoding
-- Get Storage / Shared Preferences / Secure Storage
-- Camera / Image Picker / File Picker
-- Lottie / Google Fonts / Animate Do / fl_chart
+### 🧑‍💼 Customer App
+- **Service Exploration:** Browse various service categories, read reviews, and find top-rated artisans.
+- **Real-Time Requests:** Request services, negotiate prices, and get instant responses.
+- **Live Map Tracking:** Track your artisan's location in real-time on Google Maps.
+- **Live Chat:** Instant messaging with artisans, including image, audio, and video sharing.
+- **Digital Wallet & Payments:** Secure in-app wallet and payment gateways.
+- **Favorites & Reviews:** Save your trusted artisans and leave feedback after service completion.
 
-## Getting Started
+### 👨‍🔧 Artisan (Usta) App
+- **Earnings Dashboard:** Comprehensive analytics on daily, weekly, and monthly earnings.
+- **Real-Time Job Board:** Receive instant push notifications for new nearby requests.
+- **Portfolio Management:** Showcase previous work using a built-in media gallery.
+- **Secure KYC Verification:** Face detection and identity verification using Google ML Kit.
+- **Service Management:** Easily toggle availability and manage active/completed jobs.
 
-```bash
-git clone https://github.com/yousefm2311/Merge-Usta.git
-cd Merge-Usta
-flutter pub get
-flutter run
+### ⚡ Core Technologies
+- **Real-Time Engine:** Custom `SocketManager` powering instant chat and live map tracking.
+- **State Management:** Reactive programming utilizing `GetX` for routing and state.
+- **Push Notifications:** Deeply integrated with Firebase Cloud Messaging (FCM).
+- **Localization:** Full RTL support with dynamic Arabic/English switching.
+- **Media Processing:** Audio recording, video thumbnails, and local image compression.
+
+---
+
+## 🏗️ Architecture & Tech Stack
+
+Merge Usta follows a clean, feature-first modular architecture separating the two user personas while sharing core utilities.
+
+### 📦 Major Dependencies
+| Category | Libraries / Packages |
+|----------|----------------------|
+| **Core & State** | `flutter`, `get`, `shared_preferences`, `flutter_secure_storage` |
+| **Networking** | `dio`, `socket_io_client`, `pretty_dio_logger` |
+| **Maps & Location** | `google_maps_flutter`, `geolocator`, `geocoding` |
+| **Media & Files** | `image_picker`, `record`, `just_audio`, `video_player`, `file_picker` |
+| **UI & Animations** | `lottie`, `fl_chart`, `animate_do`, `simple_splash_view` |
+| **Firebase & ML** | `firebase_core`, `firebase_messaging`, `google_mlkit_face_detection` |
+
+---
+
+## 📂 Folder Structure
+
+```text
+lib/
+├── app/                      # Shared Core App (App Switcher, App Modes)
+├── Artisan/                  # Artisan (Usta) Specific App
+│   ├── core/                 # Artisan Core Config & Middleware
+│   ├── data/                 # Artisan Repositories & Models
+│   ├── features/             # Artisan Features (Auth, Home, Wallet, KYC, etc.)
+│   └── main.dart             # Artisan Entry Point
+├── Customer/                 # Customer Specific App
+│   ├── core/                 # Customer Core (Socket Engine, Theme, Config)
+│   ├── data/                 # Customer Repositories & API integration
+│   ├── features/             # Customer Features (Explore, Requests, Map, Chat)
+│   └── main.dart             # Customer Entry Point
+└── main.dart                 # Global Entry Point (Initializes App Switcher)
 ```
 
-## Environment And Secrets
+---
 
-Before sharing or publishing this repository, review all configuration files and assets carefully.
+## 🚀 Getting Started
 
-```env
-API_BASE_URL=
-SOCKET_URL=
-GOOGLE_MAPS_API_KEY=
-FIREBASE_PROJECT_ID=
-```
+### Prerequisites
+- [Flutter SDK](https://flutter.dev/docs/get-started/install) (v3.9.2 or higher)
+- [Dart SDK](https://dart.dev/get-dart)
+- Android Studio / VS Code
+- A valid Google Maps API Key
+- Firebase Project Setup (`google-services.json` & `GoogleService-Info.plist`)
 
-Do not expose service-account files, notification keys, production API URLs, auth tokens, or private credentials.
+### Installation
 
-## Screenshots
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/yousefm2311/Merge-Usta.git
+   cd Merge-Usta
+   ```
 
-Add customer flow, service flow, chat, map, and dashboard screenshots before pinning publicly.
+2. **Install Dependencies:**
+   ```bash
+   flutter pub get
+   ```
 
-```md
-![Usta app flow](docs/screenshots/usta-flow.png)
-```
+3. **Environment Setup:**
+   Ensure you have your API keys and Base URLs configured. You may need to create an `.env` file or update the `config` files in `lib/Customer/core/config/` and `lib/Artisan/core/config/`.
+   
+   *Required Keys:*
+   - `API_BASE_URL`
+   - `SOCKET_URL`
+   - `GOOGLE_MAPS_API_KEY`
 
-## Roadmap
+4. **Run the App:**
+   ```bash
+   flutter run
+   ```
 
-- Add architecture notes for modules and API services
-- Document Firebase and notification setup
-- Add screenshots for primary user flows
-- Add build and release notes for Android/iOS
+---
 
-## Author
+## 📱 Screenshots
 
-Yousef Mohamed
+*(Add your high-quality screenshots here to showcase the UI)*
 
-- GitHub: https://github.com/yousefm2311
+| Customer Home | Artisan Dashboard | Live Map Tracking | Real-Time Chat |
+|:---:|:---:|:---:|:---:|
+| <img src="docs/screenshots/customer_home.png" width="200" alt="Customer Home" /> | <img src="docs/screenshots/artisan_dash.png" width="200" alt="Artisan Dash" /> | <img src="docs/screenshots/map_tracking.png" width="200" alt="Map Tracking" /> | <img src="docs/screenshots/chat_screen.png" width="200" alt="Chat" /> |
+
+---
+
+## 🤝 Contributing
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 🛡️ License
+This project is private and confidential. All rights reserved.
+
+<div align="center">
+  <p>Made with ❤️ by <strong>Yousef Mohamed</strong></p>
+</div>
